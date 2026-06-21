@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>AG TRADERS – Tile Box Planner</title>
+  <meta name="description" content="Professional tile box planning tool for showroom sellers. Calculate boxes needed per room and total requirements for customer orders." />
+  
+  <!-- PWA & iOS Support -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#7c3aed" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="AG Traders" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="2" y="2" width="16" height="16" rx="3" fill="url(#g1)"/>
+            <rect x="22" y="2" width="16" height="16" rx="3" fill="url(#g2)"/>
+            <rect x="2" y="22" width="16" height="16" rx="3" fill="url(#g2)"/>
+            <rect x="22" y="22" width="16" height="16" rx="3" fill="url(#g1)"/>
+            <defs>
+              <linearGradient id="g1" x1="2" y1="2" x2="18" y2="18" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#6366f1"/>
+                <stop offset="1" stop-color="#a78bfa"/>
+              </linearGradient>
+              <linearGradient id="g2" x1="22" y1="2" x2="38" y2="18" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#8b5cf6"/>
+                <stop offset="1" stop-color="#c4b5fd"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-title">AG TRADERS</span>
+          <span class="logo-sub">Tiruchengode • Mob: 9489575108</span>
+        </div>
+      </div>
+
+      <div class="tabs no-print">
+        <button id="tab-planner" class="tab-btn active" onclick="switchTab('planner')">
+          📐 Planner
+        </button>
+        <button id="tab-quotation" class="tab-btn" onclick="switchTab('quotation')">
+          💼 Quotation
+        </button>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-sync-csv" class="btn btn-ghost" onclick="document.getElementById('csv-file-input').click()" title="Sync tile data from CSV file">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          Sync CSV
+        </button>
+        <input type="file" id="csv-file-input" accept=".csv" style="display: none;" onchange="handleCSVUpload(event)" />
+        <button id="btn-print" class="btn btn-ghost" onclick="printPlan()">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v4a2 2 0 002 2h1v2a1 1 0 001 1h8a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a1 1 0 00-1-1H6a1 1 0 00-1 1zm2 0h6v3H7V4zm-1 9H5v-1h1v1zm8 0h-1v-1h1v1zm-7 3H7v-3h6v3z" clip-rule="evenodd"/></svg>
+          Print Plan
+        </button>
+        <button id="btn-whatsapp" class="btn btn-success-ghost" onclick="shareWhatsApp()" title="Share estimate on WhatsApp">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.244 8.477 3.513 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.724-1.458L0 24zm6.59-4.846c1.666.988 3.311 1.485 5.357 1.486 5.517 0 10.005-4.487 10.008-10.007.001-2.674-1.036-5.188-2.92-7.076C17.209 1.67 14.7 1.63 12.01 1.63c-5.523 0-10.01 4.488-10.013 10.01-.001 2.083.547 4.113 1.59 5.897L2.57 21.43l3.92-1.026-.143-.25zm11.72-7.85c-.3-.149-1.772-.875-2.047-.975-.276-.101-.476-.149-.675.15-.198.3-.77.975-.944 1.174-.173.199-.347.224-.647.075-.3-.15-1.266-.467-2.41-1.485-.89-.793-1.492-1.773-1.666-2.07-.174-.3-.019-.462.13-.611.135-.134.3-.349.45-.523.15-.174.2-.3.3-.499.1-.199.05-.374-.025-.524-.075-.15-.675-1.624-.925-2.224-.244-.596-.493-.514-.675-.523-.172-.008-.371-.01-.57-.01-.2 0-.525.075-.8.374-.274.3-1.05 1.025-1.05 2.5 0 1.475 1.075 2.9 1.225 3.1.15.199 2.113 3.227 5.118 4.526.715.309 1.273.493 1.708.632.719.228 1.373.196 1.892.118.577-.087 1.772-.724 2.022-1.424.25-.699.25-1.3.175-1.424-.075-.124-.275-.199-.575-.349z"/></svg>
+          Share Plan
+        </button>
+        <button id="btn-clear" class="btn btn-danger-ghost" onclick="clearAll()">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          Clear All
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div id="planner-view">
+    <!-- Customer Info Bar -->
+    <section class="customer-bar card">
+      <div class="customer-fields">
+        <div class="field-group">
+          <label for="customer-name">Customer Name</label>
+          <input type="text" id="customer-name" placeholder="e.g. Mr. Kumar" />
+        </div>
+        <div class="field-group">
+          <label for="customer-phone">Phone Number</label>
+          <input type="tel" id="customer-phone" placeholder="e.g. 9876543210" />
+        </div>
+        <div class="field-group">
+          <label for="plan-date">Date</label>
+          <input type="date" id="plan-date" />
+        </div>
+        <div class="field-group">
+          <label for="plan-notes">Notes</label>
+          <input type="text" id="plan-notes" placeholder="e.g. 2BHK, Chennai" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Add Room Form -->
+    <section class="add-room-section card">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="section-icon">🏠</span>
+          Add Room
+        </h2>
+      </div>
+      <div class="add-room-form">
+        <div class="form-row">
+          <div class="field-group">
+            <label for="room-name">Room Name</label>
+            <input type="text" id="room-name" placeholder="e.g. Hall, Bedroom, Kitchen" list="room-suggestions" />
+            <datalist id="room-suggestions">
+              <option value="Hall"/>
+              <option value="Master Bedroom"/>
+              <option value="Bedroom 2"/>
+              <option value="Bedroom 3"/>
+              <option value="Kitchen"/>
+              <option value="Bathroom"/>
+              <option value="Toilet"/>
+              <option value="Pooja Room"/>
+              <option value="Balcony"/>
+              <option value="Dining Room"/>
+              <option value="Living Room"/>
+              <option value="Car Porch"/>
+              <option value="Staircase"/>
+            </datalist>
+          </div>
+          <div class="field-group size-group">
+            <label>Room Size (feet)</label>
+            <div class="size-inputs">
+              <input type="number" id="room-length" placeholder="Length (L)" min="0" step="0.5" />
+              <span class="size-x">×</span>
+              <input type="number" id="room-breadth" placeholder="Breadth (B)" min="0" step="0.5" />
+            </div>
+          </div>
+          <div class="field-group area-display">
+            <label>Area (sqft)</label>
+            <div class="area-value" id="live-area">–</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="field-group tile-select-group">
+            <label for="tile-search">Tile Model / Design</label>
+            <div class="tile-search-wrapper">
+              <input type="text" id="tile-search" placeholder="Type to search tile..." autocomplete="off" />
+              <div class="tile-dropdown" id="tile-dropdown"></div>
+            </div>
+            <input type="hidden" id="selected-tile-name" />
+            <input type="hidden" id="selected-tile-coverage" />
+            <input type="hidden" id="selected-tile-weight" />
+          </div>
+          <div class="field-group tile-info-display" id="tile-info-display" style="display:none;">
+            <label>Tile Info</label>
+            <div class="tile-info-badges">
+              <span class="badge badge-blue" id="info-coverage">–</span>
+              <span class="badge badge-green" id="info-weight">–</span>
+            </div>
+          </div>
+          <div class="field-group" id="actual-boxes-display" style="display:none;">
+            <label>Actual Boxes</label>
+            <div class="actual-boxes-value" id="live-actual-boxes">–</div>
+          </div>
+          <div class="field-group final-boxes-input-group" id="final-boxes-input-group" style="display:none; max-width:130px;">
+            <label for="final-boxes">Final Boxes</label>
+            <input type="number" id="final-boxes" min="1" value="1" step="1" />
+          </div>
+          <div class="form-actions">
+            <button id="btn-add-room" class="btn btn-primary" onclick="addRoom()">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+              Add Room
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Room List Table -->
+    <section class="rooms-section card" id="rooms-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="section-icon">📋</span>
+          Room Plan
+        </h2>
+        <div class="room-count-badge" id="room-count-badge" style="display:none;">
+          <span id="room-count">0</span> rooms
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="plan-table" id="plan-table">
+          <thead>
+            <tr>
+              <th class="col-si">#</th>
+              <th class="col-room">Room Name</th>
+              <th class="col-size">Size (L × B)</th>
+              <th class="col-area">Area sqft</th>
+              <th class="col-tile">Tile Model</th>
+              <th class="col-cov">Coverage/Box</th>
+              <th class="col-boxes">Actual Boxes</th>
+              <th class="col-final">Final Boxes</th>
+              <th class="col-wt">Wt/Box (kg)</th>
+              <th class="col-total-wt">Total Wt (kg)</th>
+              <th class="col-del">Del</th>
+            </tr>
+          </thead>
+          <tbody id="plan-tbody">
+          </tbody>
+        </table>
+        <div class="empty-state" id="empty-state">
+          <div class="empty-icon">🏗️</div>
+          <p>No rooms added yet. Add rooms above to start planning!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Summary Section -->
+    <section class="summary-section" id="summary-section" style="display:none;">
+      <div class="summary-grid">
+        <div class="summary-card card">
+          <div class="summary-icon">📦</div>
+          <div class="summary-info">
+            <span class="summary-label">Total Boxes</span>
+            <span class="summary-value" id="total-boxes">0</span>
+          </div>
+        </div>
+        <div class="summary-card card">
+          <div class="summary-icon">⚖️</div>
+          <div class="summary-info">
+            <span class="summary-label">Total Weight</span>
+            <span class="summary-value" id="total-weight">0 kg</span>
+          </div>
+        </div>
+        <div class="summary-card card">
+          <div class="summary-icon">📐</div>
+          <div class="summary-info">
+            <span class="summary-label">Total Area</span>
+            <span class="summary-value" id="total-area">0 sqft</span>
+          </div>
+        </div>
+        <div class="summary-card card">
+          <div class="summary-icon">🏠</div>
+          <div class="summary-info">
+            <span class="summary-label">Total Rooms</span>
+            <span class="summary-value" id="total-rooms">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tile-wise Summary -->
+      <div class="tile-summary card">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="section-icon">📊</span>
+            Tile-wise Box Summary
+          </h2>
+        </div>
+        <div id="tile-summary-content"></div>
+      </div>
+    </div> <!-- End of #planner-view -->
+
+    <div id="quotation-view" style="display: none;">
+      <!-- Quotation Header Options (on screen) -->
+      <div class="quote-screen-actions no-print">
+        <button id="btn-print-quote" class="btn btn-primary" onclick="printQuotation()">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v4a2 2 0 002 2h1v2a1 1 0 001 1h8a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a1 1 0 00-1-1H6a1 1 0 00-1 1zm2 0h6v3H7V4zm-1 9H5v-1h1v1zm8 0h-1v-1h1v1zm-7 3H7v-3h6v3z" clip-rule="evenodd"/></svg>
+          Print Quotation
+        </button>
+      </div>
+
+      <!-- Quotation Card Paper Sheet -->
+      <section class="quotation-sheet card">
+        <div class="quote-title-centered">QUOTATION</div>
+        
+        <div class="quote-header-grid">
+          <div class="quote-to-block">
+            <label for="quote-customer-name">To,</label>
+            <input type="text" id="quote-customer-name" placeholder="Customer Name" />
+          </div>
+          <div class="quote-meta-block">
+            <div class="quote-meta-row">
+              <label for="quote-number">Quotation No:</label>
+              <input type="text" id="quote-number" value="Q-001" />
+            </div>
+            <div class="quote-meta-row">
+              <label for="quote-date">Date:</label>
+              <input type="text" id="quote-date" />
+            </div>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="quote-table">
+            <thead>
+              <tr>
+                <th class="col-si">Sl No</th>
+                <th>Description of Goods</th>
+                <th style="width: 200px;">Quantity</th>
+                <th style="width: 220px;">Sqft Rate / Online Rate</th>
+                <th style="width: 155px;">Rate</th>
+                <th style="width: 160px;" class="td-amount">Amount</th>
+                <th style="width: 60px;" class="no-print">Del</th>
+              </tr>
+            </thead>
+            <tbody id="quotation-tbody">
+            </tbody>
+            <tfoot>
+              <tr class="quote-total-row">
+                <td colspan="5" style="text-align: right; font-weight: 700;">Total:</td>
+                <td id="quotation-grand-total" class="td-amount" style="font-weight: 700;">₹ 0.00</td>
+                <td class="no-print"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <button id="btn-add-quote-row" class="btn btn-ghost no-print" onclick="addQuotationRow()" style="margin-top: 1rem;">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+          Add Row
+        </button>
+
+        <div class="quote-words-box">
+          <label>Amount Chargeable (in words):</label>
+          <div id="quotation-amount-words" class="quote-words-value">Zero Rupees Only</div>
+        </div>
+
+        <div class="quote-signatures">
+          <div class="quote-sig-block">
+            <div class="quote-sig-line"></div>
+            <div>Customer Signature</div>
+          </div>
+          <div class="quote-sig-block">
+            <div class="quote-sig-line"></div>
+            <div>Authorised Signatory</div>
+          </div>
+        </div>
+      </section>
+    </div> <!-- End of #quotation-view -->
+  </main>
+
+  <!-- Print Template -->
+  <div id="print-area" class="print-area">
+    <div class="print-header">
+      <div class="print-logo">
+        <div class="print-company-name">AG TRADERS</div>
+        <div class="print-company-sub">Tiruchengode • Mob: 9489575108</div>
+      </div>
+      <div class="print-title">Box Planning Sheet</div>
+    </div>
+    <div id="print-customer-info" class="print-customer-info"></div>
+    <table class="print-table" id="print-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Room Name</th>
+          <th>Size (L×B)</th>
+          <th>Area sqft</th>
+          <th>Tile Model</th>
+          <th>Cov/Box</th>
+          <th>Actual Boxes</th>
+          <th>Final Boxes</th>
+          <th>Wt/Box</th>
+          <th>Total Wt</th>
+        </tr>
+      </thead>
+      <tbody id="print-tbody"></tbody>
+    </table>
+    <div id="print-summary" class="print-summary"></div>
+    <div id="print-tile-summary" class="print-tile-summary"></div>
+    <div class="print-footer">
+      <div class="print-sign-block">
+        <div class="print-sign-line"></div>
+        <div>Customer Signature</div>
+      </div>
+      <div class="print-sign-block">
+        <div class="print-sign-line"></div>
+        <div>Sales Executive</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Print Template (Quotation) -->
+  <div id="print-quotation-area" class="print-quotation-area">
+    <div class="print-quote-header">
+      <div class="print-quote-title">QUOTATION</div>
+    </div>
+    
+    <div class="print-quote-meta">
+      <div class="print-quote-to">
+        <div class="print-meta-label">To,</div>
+        <div id="print-quote-customer" class="print-meta-val">Customer Name</div>
+      </div>
+      <div class="print-quote-numbers">
+        <div><span class="print-meta-label">Quotation No:</span> <span id="print-quote-number" class="print-meta-val">Q-001</span></div>
+        <div style="margin-top: 4px;"><span class="print-meta-label">Date:</span> <span id="print-quote-date" class="print-meta-val">20/06/2026</span></div>
+      </div>
+    </div>
+
+    <table class="print-quote-table">
+      <thead>
+        <tr>
+          <th style="width: 50px;">Sl No</th>
+          <th>Description of Goods</th>
+          <th style="width: 100px;">Quantity</th>
+          <th style="width: 160px;">Sqft Rate / Online Rate</th>
+          <th style="width: 120px;">Rate</th>
+          <th style="width: 150px;">Amount</th>
+        </tr>
+      </thead>
+      <tbody id="print-quote-tbody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="5" style="text-align: right; font-weight: 700;">Total:</td>
+          <td id="print-quote-grand-total" style="font-weight: 700;">₹ 0.00</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="print-quote-words">
+      <div class="print-meta-label">Amount Chargeable (in words):</div>
+      <div id="print-quote-amount-words" style="font-weight: 600; margin-top: 4px;">Zero Rupees Only</div>
+    </div>
+
+    <div class="print-quote-footer">
+      <div class="print-sign-block">
+        <div class="print-sign-line"></div>
+        <div>Customer Signature</div>
+      </div>
+      <div class="print-sign-block">
+        <div class="print-sign-line"></div>
+        <div>Authorised Signatory</div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
