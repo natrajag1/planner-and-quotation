@@ -2,6 +2,95 @@
    Tile Box Planner – app.js
    ====================================================== */
 
+// ─── Supabase Cloud Sync Configuration ──────────────────────────
+const DEFAULT_SUPABASE_URL = "https://tnpghgqgavcfukjjmnwk.supabase.co";
+const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRucGdoZ3FnYXZjZnVramptbndrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyNDAzMTksImV4cCI6MjA5NzgxNjMxOX0.-QoBvaLT1rm7X4tEYuodin2PrtpUWaBzb04s64wzu3k";
+
+let supabaseClient = null;
+let activeEstimateId = null;
+let allCloudEstimates = []; // cached list of saved estimates for searching
+
+function initSupabase() {
+  const url = localStorage.getItem("supabase_url") || DEFAULT_SUPABASE_URL;
+  const key = localStorage.getItem("supabase_anon_key") || DEFAULT_SUPABASE_KEY;
+
+  if (typeof supabase !== "undefined" && url && key) {
+    try {
+      supabaseClient = supabase.createClient(url, key);
+      console.log("Supabase client initialized successfully!");
+    } catch (err) {
+      console.error("Error creating Supabase client:", err);
+    }
+  } else {
+    console.warn("Supabase library not loaded or credentials not configured.");
+  }
+}
+
+function loadSettings() {
+  const url = localStorage.getItem("supabase_url") || DEFAULT_SUPABASE_URL;
+  const key = localStorage.getItem("supabase_anon_key") || DEFAULT_SUPABASE_KEY;
+
+  const urlInput = document.getElementById("settings-supabase-url");
+  const keyInput = document.getElementById("settings-supabase-key");
+
+  if (urlInput) urlInput.value = url;
+  if (keyInput) keyInput.value = key;
+}
+
+function saveSettings() {
+  const urlVal = document.getElementById("settings-supabase-url").value.trim();
+  const keyVal = document.getElementById("settings-supabase-key").value.trim();
+
+  if (!urlVal || !keyVal) {
+    alert("Please enter both the Supabase URL and Anon Key.");
+    return;
+  }
+
+  localStorage.setItem("supabase_url", urlVal);
+  localStorage.setItem("supabase_anon_key", keyVal);
+
+  initSupabase();
+  document.getElementById("settings-modal").close();
+  alert("Supabase API settings saved and client re-initialized!");
+}
+
+function updateActiveEstimateStatus() {
+  const statusEl = document.getElementById("active-estimate-status");
+  if (!statusEl) return;
+
+  if (activeEstimateId) {
+    statusEl.textContent = "☁️ Cloud Saved";
+    statusEl.className = "badge badge-green";
+    statusEl.title = `Saved in database (ID: ${activeEstimateId})`;
+  } else {
+    statusEl.textContent = "✏️ New Plan";
+    statusEl.className = "badge badge-blue";
+    statusEl.title = "Not saved to cloud database yet";
+  }
+}
+
+function setupDialogLightDismiss(dialogId) {
+  const dialog = document.getElementById(dialogId);
+  if (!dialog) return;
+
+  if (!("closedBy" in HTMLDialogElement.prototype)) {
+    dialog.addEventListener("click", (event) => {
+      if (event.target !== dialog) return;
+
+      const rect = dialog.getBoundingClientRect();
+      const isDialogContent = (
+        rect.top <= event.clientY &&
+        event.clientY <= rect.top + rect.height &&
+        rect.left <= event.clientX &&
+        event.clientX <= rect.left + rect.width
+      );
+
+      if (isDialogContent) return;
+      dialog.close();
+    });
+  }
+}
+
 // ─── Tile Database (from CSV) ───────────────────────────────────
 let TILE_DB = [
   // 48×24 PGVT
@@ -365,6 +454,15 @@ function handleCSVUpload(event) {
 
 // ─── Init ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize Supabase and settings
+  initSupabase();
+  loadSettings();
+  updateActiveEstimateStatus();
+
+  // Setup dialog close fallbacks for light-dismiss
+  setupDialogLightDismiss('settings-modal');
+  setupDialogLightDismiss('cloud-estimates-modal');
+
   loadCSVOnStartup();
 
   // Register PWA Service Worker
@@ -853,12 +951,25 @@ function printPlan() {
 
 // ─── Clear All ──────────────────────────────────────────────────
 function clearAll() {
-  if (rooms.length === 0) return;
-  if (!confirm('Clear all rooms? This cannot be undone.')) return;
+  if (rooms.length === 0 && !activeEstimateId) return;
+  if (!confirm('Clear all planner data? This cannot be undone.')) return;
+  
   rooms = [];
+  quotationItems = [];
   nextId = 1;
+  activeEstimateId = null;
+  
+  document.getElementById('customer-name').value = '';
+  document.getElementById('customer-phone').value = '';
+  document.getElementById('plan-notes').value = '';
+  
+  const quoteCustNameEl = document.getElementById('quote-customer-name');
+  if (quoteCustNameEl) quoteCustNameEl.value = '';
+  
   renderTable();
   renderSummary();
+  if (typeof renderQuotation === 'function') renderQuotation();
+  updateActiveEstimateStatus();
 }
 
 // ─── Share WhatsApp ─────────────────────────────────────────────
@@ -1440,6 +1551,281 @@ function scrollQuoteHighlightedIntoView(idx) {
   }
 }
 
+function savePlanToCloud() {
+  if (!supabaseClient) {
+    alert("Supabase is not connected. Please click the Settings (⚙️) button to configure your URL and Anon Key.");
+    return;
+  }
+
+  const custName  = document.getElementById('customer-name').value.trim();
+  const custPhone = document.getElementById('customer-phone').value.trim();
+  const planDate  = document.getElementById('plan-date').value;
+  const planNotes = document.getElementById('plan-notes').value.trim();
+  
+  if (!custName) {
+    alert("Please enter a Customer Name before saving.");
+    return;
+  }
+
+  const quoteCustNameEl = document.getElementById('quote-customer-name');
+  const quoteNumberEl   = document.getElementById('quote-number');
+  const quoteDateEl     = document.getElementById('quote-date');
+  
+  const quoteCustName = quoteCustNameEl ? quoteCustNameEl.value.trim() : '';
+  const quoteNumber   = quoteNumberEl ? quoteNumberEl.value.trim() : '';
+  const quoteDate     = quoteDateEl ? quoteDateEl.value.trim() : '';
+  
+  const payload = {
+    customer_name: custName,
+    customer_phone: custPhone,
+    plan_date: planDate || null,
+    plan_notes: planNotes,
+    rooms: rooms,
+    quotation_items: quotationItems,
+    quote_customer_name: quoteCustName,
+    quote_number: quoteNumber,
+    quote_date: quoteDate,
+    next_id: nextId
+  };
+
+  const btn = document.getElementById('btn-cloud-save');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = "Saving...";
+
+  let query;
+  if (activeEstimateId) {
+    query = supabaseClient
+      .from('estimates')
+      .update(payload)
+      .eq('id', activeEstimateId)
+      .select();
+  } else {
+    query = supabaseClient
+      .from('estimates')
+      .insert([payload])
+      .select();
+  }
+
+  query.then(({ data, error }) => {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+    
+    if (error) {
+      console.error("Cloud Save error:", error);
+      alert("Failed to save to cloud: " + error.message);
+    } else {
+      if (data && data.length > 0) {
+        activeEstimateId = data[0].id;
+        updateActiveEstimateStatus();
+        alert("Estimate saved to cloud successfully!");
+      } else {
+        alert("Estimate saved to cloud successfully!");
+      }
+    }
+  }).catch(err => {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+    console.error("Cloud Save unexpected error:", err);
+    alert("An unexpected error occurred during Cloud Save: " + err.message);
+  });
+}
+
+function openCloudEstimatesModal() {
+  if (!supabaseClient) {
+    alert("Supabase is not connected. Please click the Settings (⚙️) button to configure your URL and Anon Key.");
+    return;
+  }
+
+  const modal = document.getElementById('cloud-estimates-modal');
+  modal.showModal();
+
+  // Clear search input
+  const searchInput = document.getElementById('cloud-search-input');
+  if (searchInput) searchInput.value = '';
+
+  const tbody = document.getElementById('cloud-estimates-tbody');
+  if (tbody) tbody.innerHTML = '';
+
+  const loadingState = document.getElementById('cloud-loading-state');
+  const emptyState = document.getElementById('cloud-empty-state');
+  
+  if (loadingState) loadingState.style.display = 'flex';
+  if (emptyState) emptyState.style.display = 'none';
+
+  // Fetch estimates
+  supabaseClient
+    .from('estimates')
+    .select('id, created_at, customer_name, customer_phone, plan_date, plan_notes')
+    .order('created_at', { ascending: false })
+    .then(({ data, error }) => {
+      if (loadingState) loadingState.style.display = 'none';
+      
+      if (error) {
+        console.error("Fetch estimates error:", error);
+        alert("Failed to fetch cloud estimates: " + error.message);
+      } else {
+        allCloudEstimates = data || [];
+        renderCloudEstimatesList(allCloudEstimates);
+      }
+    })
+    .catch(err => {
+      if (loadingState) loadingState.style.display = 'none';
+      console.error("Fetch estimates unexpected error:", err);
+      alert("An unexpected error occurred: " + err.message);
+    });
+}
+
+function renderCloudEstimatesList(list) {
+  const tbody = document.getElementById('cloud-estimates-tbody');
+  const emptyState = document.getElementById('cloud-empty-state');
+  
+  if (!tbody) return;
+  tbody.innerHTML = '';
+
+  if (list.length === 0) {
+    if (emptyState) emptyState.style.display = 'flex';
+    return;
+  }
+
+  if (emptyState) emptyState.style.display = 'none';
+
+  list.forEach(item => {
+    const row = document.createElement('tr');
+    
+    // Format date nicely
+    let formattedDate = '';
+    if (item.plan_date) {
+      const d = new Date(item.plan_date);
+      formattedDate = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    } else if (item.created_at) {
+      const d = new Date(item.created_at);
+      formattedDate = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    }
+
+    row.innerHTML = `
+      <td><strong>${item.customer_name || 'Untitled'}</strong></td>
+      <td>${item.customer_phone || '—'}</td>
+      <td>${formattedDate}</td>
+      <td><span style="font-size:0.8rem; color:var(--text3);">${item.plan_notes || '—'}</span></td>
+      <td class="cloud-action-cell">
+        <button class="btn btn-primary" onclick="loadCloudEstimate('${item.id}')">Load</button>
+        <button class="btn btn-danger-ghost" onclick="deleteCloudEstimate('${item.id}')" title="Delete from cloud">
+          <svg viewBox="0 0 20 20" fill="currentColor" style="width:14px; height:14px;"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function filterCloudEstimates() {
+  const query = document.getElementById('cloud-search-input').value.trim().toLowerCase();
+  if (!query) {
+    renderCloudEstimatesList(allCloudEstimates);
+    return;
+  }
+
+  const filtered = allCloudEstimates.filter(item => {
+    const name = (item.customer_name || '').toLowerCase();
+    const phone = (item.customer_phone || '').toLowerCase();
+    const notes = (item.plan_notes || '').toLowerCase();
+    return name.includes(query) || phone.includes(query) || notes.includes(query);
+  });
+
+  renderCloudEstimatesList(filtered);
+}
+
+function loadCloudEstimate(id) {
+  if (!supabaseClient) return;
+
+  if (rooms.length > 0) {
+    if (!confirm('This will replace your current planner data. Do you want to continue?')) {
+      return;
+    }
+  }
+
+  supabaseClient
+    .from('estimates')
+    .select('*')
+    .eq('id', id)
+    .single()
+    .then(({ data, error }) => {
+      if (error) {
+        console.error("Load cloud estimate error:", error);
+        alert("Failed to load estimate: " + error.message);
+      } else if (data) {
+        // Populate inputs
+        document.getElementById('customer-name').value = data.customer_name || '';
+        document.getElementById('customer-phone').value = data.customer_phone || '';
+        document.getElementById('plan-date').value = data.plan_date || '';
+        document.getElementById('plan-notes').value = data.plan_notes || '';
+
+        const quoteCustNameEl = document.getElementById('quote-customer-name');
+        const quoteNumberEl   = document.getElementById('quote-number');
+        const quoteDateEl     = document.getElementById('quote-date');
+
+        if (quoteCustNameEl) quoteCustNameEl.value = data.quote_customer_name || data.customer_name || '';
+        if (quoteNumberEl) quoteNumberEl.value = data.quote_number || '';
+        if (quoteDateEl) quoteDateEl.value = data.quote_date || '';
+
+        // Restore state variables
+        rooms = data.rooms || [];
+        quotationItems = data.quotation_items || [];
+        nextId = data.next_id || (rooms.reduce((max, r) => Math.max(max, r.id), 0) + 1);
+        activeEstimateId = id;
+
+        // Re-renders and updates
+        updateLiveArea();
+        renderTable();
+        renderSummary();
+        if (typeof renderQuotation === 'function') renderQuotation();
+        updateActiveEstimateStatus();
+
+        document.getElementById('cloud-estimates-modal').close();
+        alert("Estimate loaded successfully!");
+      }
+    })
+    .catch(err => {
+      console.error("Load cloud estimate unexpected error:", err);
+      alert("An unexpected error occurred: " + err.message);
+    });
+}
+
+function deleteCloudEstimate(id) {
+  if (!supabaseClient) return;
+
+  if (!confirm("Are you sure you want to delete this estimate from the cloud? This action cannot be undone.")) {
+    return;
+  }
+
+  supabaseClient
+    .from('estimates')
+    .delete()
+    .eq('id', id)
+    .then(({ error }) => {
+      if (error) {
+        console.error("Delete estimate error:", error);
+        alert("Failed to delete estimate: " + error.message);
+      } else {
+        alert("Estimate deleted successfully!");
+        
+        // If it was the active estimate, reset activeEstimateId
+        if (activeEstimateId === id) {
+          activeEstimateId = null;
+          updateActiveEstimateStatus();
+        }
+
+        // Refresh the list
+        openCloudEstimatesModal();
+      }
+    })
+    .catch(err => {
+      console.error("Delete estimate unexpected error:", err);
+      alert("An unexpected error occurred: " + err.message);
+    });
+}
+
 function savePlan() {
   const custName  = document.getElementById('customer-name').value.trim();
   const custPhone = document.getElementById('customer-phone').value.trim();
@@ -1523,6 +1909,10 @@ function handleLoadPlan(event) {
       rooms = data.rooms;
       quotationItems = data.quotationItems || [];
       nextId = data.nextId || (rooms.reduce((max, r) => Math.max(max, r.id), 0) + 1);
+      
+      // Reset cloud state since we loaded a local file
+      activeEstimateId = null;
+      updateActiveEstimateStatus();
       
       // Trigger updates and re-renders
       updateLiveArea();
