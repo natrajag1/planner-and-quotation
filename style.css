@@ -767,125 +767,165 @@ input::placeholder { color: var(--text3); }
   
   .print-quotation-area {
     background: #fff;
-    color: #000;
-    font-family: 'Inter', sans-serif;
+    color: #1a1a1a;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
     width: 100%;
-    padding-top: 0.5cm; /* Space reduced for digital letterhead header */
+    padding-top: 0.5cm;
+    font-size: 10pt;
+    line-height: 1.5;
   }
   .print-quote-company-header {
     text-align: center;
     margin-bottom: 0.3cm;
   }
   .print-quote-company-name {
-    font-size: 20pt;
+    font-size: 18pt;
     font-weight: 800;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
     color: #000;
-    margin-bottom: 0.08cm;
+    margin-bottom: 0.1cm;
+    text-transform: uppercase;
   }
   .print-quote-company-address {
-    font-size: 9.5pt;
-    color: #374151;
-    line-height: 1.4;
-    max-width: 85%;
-    margin: 0 auto 0.08cm;
+    font-size: 8.5pt;
+    color: #444;
+    line-height: 1.45;
+    max-width: 80%;
+    margin: 0 auto 0.1cm;
   }
   .print-quote-company-phone {
-    font-size: 10.5pt;
-    font-weight: 700;
-    color: #000;
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: #222;
+    letter-spacing: 0.02em;
   }
   .print-quote-header-divider {
     border: 0;
-    border-top: 1px solid #d1d5db;
+    border-top: 1.5px solid #999;
     margin-top: 0.2cm;
-    margin-bottom: 0.4cm;
+    margin-bottom: 0.35cm;
   }
   .print-quote-header {
     display: flex;
-    justify-content: center; /* Center the title */
+    justify-content: center;
     align-items: center;
-    margin-bottom: 0.6cm;
-    border-bottom: 2px solid #000;
-    padding-bottom: 0.2cm;
+    margin-bottom: 0.5cm;
+    border-bottom: 1.5px solid #333;
+    padding-bottom: 0.15cm;
   }
   .print-quote-title {
-    font-size: 24pt; /* Increased size */
-    font-weight: 800;
-    letter-spacing: 0.15em;
+    font-size: 14pt;
+    font-weight: 700;
+    letter-spacing: 0.2em;
     color: #000;
+    text-transform: uppercase;
   }
   .print-quote-meta {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 0.8cm;
-    font-size: 11pt; /* Increased size */
+    align-items: flex-start;
+    margin-bottom: 0.6cm;
+    font-size: 10pt;
   }
   .print-quote-to {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
   }
   .print-quote-numbers {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 3px;
   }
   .print-meta-label {
-    font-weight: 700;
-    color: #374151;
-    font-size: 9.5pt; /* Increased size */
+    font-weight: 600;
+    color: #333;
+    font-size: 9pt;
     text-transform: uppercase;
     letter-spacing: 0.03em;
   }
   .print-meta-val {
     color: #000;
     font-weight: 700;
+    font-size: 10pt;
+  }
+  /* Right-side meta alignment table */
+  .print-meta-table {
+    border-collapse: collapse;
+    border: none;
+  }
+  .print-meta-table td {
+    border: none;
+    padding: 2px 0;
+    vertical-align: top;
+    font-size: 9.5pt;
+  }
+  .print-meta-table .print-meta-label {
+    white-space: nowrap;
+    text-align: right;
+    padding-right: 4px;
+    font-size: 9pt;
+  }
+  .print-meta-table .print-meta-sep {
+    padding: 2px 5px;
+    font-weight: 600;
+    color: #333;
+  }
+  .print-meta-table .print-meta-val {
+    text-align: left;
+    padding-left: 4px;
+    font-weight: 700;
+    font-size: 10pt;
+    white-space: nowrap;
   }
   .print-quote-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 11pt; /* Increased size */
-    margin-bottom: 0.8cm;
+    font-size: 9.5pt;
+    margin-bottom: 0.6cm;
   }
   .print-quote-table th {
-    border: 1px solid #000;
-    background: #f3f4f6;
+    border: 1px solid #444;
+    background: #f0f0f0;
     color: #000;
-    padding: 9px 10px;
+    padding: 6px 8px;
     font-weight: 700;
-    font-size: 10pt; /* Increased size */
+    font-size: 8.5pt;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
     text-align: left;
   }
   .print-quote-table td {
-    border: 1px solid #000;
-    padding: 9px 10px;
-    color: #000;
+    border: 1px solid #666;
+    padding: 6px 8px;
+    color: #1a1a1a;
+    font-size: 9.5pt;
   }
   .print-quote-table tfoot td {
-    border: 1px solid #000;
-    padding: 9px 10px;
-    font-size: 12pt; /* Increased size */
+    border: 1px solid #444;
+    padding: 6px 8px;
+    font-size: 10pt;
+    font-weight: 700;
   }
   .print-quote-words {
-    border: 1px solid #000;
-    padding: 0.4cm 0.5cm;
-    margin-bottom: 0.8cm;
-    font-size: 11pt; /* Increased size */
+    border: 1px solid #666;
+    padding: 0.3cm 0.4cm;
+    margin-bottom: 0.6cm;
+    font-size: 9.5pt;
   }
   .print-quote-footer {
     display: flex;
     justify-content: space-between;
-    margin-top: 2cm;
+    margin-top: 1.8cm;
   }
   .print-quote-footer .print-sign-block {
-    font-size: 10pt;
+    font-size: 9pt;
+    text-align: center;
   }
   .print-quote-footer .print-sign-line {
-    width: 180px;
+    width: 160px;
+    border-top: 1px solid #333;
+    margin-bottom: 4px;
   }
 }
 
