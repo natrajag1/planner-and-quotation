@@ -814,9 +814,9 @@ input::placeholder { color: var(--text3); }
     padding-bottom: 0.15cm;
   }
   .print-quote-title {
-    font-size: 14pt;
+    font-size: 10pt;
     font-weight: 700;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.25em;
     color: #000;
     text-transform: uppercase;
   }
