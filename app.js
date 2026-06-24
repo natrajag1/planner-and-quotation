@@ -1439,3 +1439,103 @@ function scrollQuoteHighlightedIntoView(idx) {
     }
   }
 }
+
+function savePlan() {
+  const custName  = document.getElementById('customer-name').value.trim();
+  const custPhone = document.getElementById('customer-phone').value.trim();
+  const planDate  = document.getElementById('plan-date').value;
+  const planNotes = document.getElementById('plan-notes').value.trim();
+  
+  const quoteCustNameEl = document.getElementById('quote-customer-name');
+  const quoteNumberEl   = document.getElementById('quote-number');
+  const quoteDateEl     = document.getElementById('quote-date');
+  
+  const quoteCustName = quoteCustNameEl ? quoteCustNameEl.value.trim() : '';
+  const quoteNumber   = quoteNumberEl ? quoteNumberEl.value.trim() : '';
+  const quoteDate     = quoteDateEl ? quoteDateEl.value.trim() : '';
+  
+  const payload = {
+    customerName: custName,
+    customerPhone: custPhone,
+    planDate: planDate,
+    planNotes: planNotes,
+    rooms: rooms,
+    quotationItems: quotationItems,
+    quoteCustomerName: quoteCustName,
+    quoteNumber: quoteNumber,
+    quoteDate: quoteDate,
+    nextId: nextId
+  };
+  
+  const jsonStr = JSON.stringify(payload, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  const safeName = custName ? custName.replace(/[^a-z0-9_-]/gi, '_') : 'Untitled';
+  const safeDate = planDate ? planDate.replace(/[^a-z0-9_-]/gi, '_') : 'date';
+  
+  a.href = url;
+  a.download = `Plan_${safeName}_${safeDate}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function handleLoadPlan(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  
+  // Confirm overwrite if there are already rooms
+  if (rooms.length > 0) {
+    if (!confirm('This will replace your current planner data. Do you want to continue?')) {
+      event.target.value = ''; // clear file input
+      return;
+    }
+  }
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      
+      // Validation check
+      if (!data || !Array.isArray(data.rooms)) {
+        throw new Error('Invalid plan file format (missing rooms list).');
+      }
+      
+      // Populate fields
+      document.getElementById('customer-name').value = data.customerName || '';
+      document.getElementById('customer-phone').value = data.customerPhone || '';
+      document.getElementById('plan-date').value = data.planDate || '';
+      document.getElementById('plan-notes').value = data.planNotes || '';
+      
+      const quoteCustNameEl = document.getElementById('quote-customer-name');
+      const quoteNumberEl   = document.getElementById('quote-number');
+      const quoteDateEl     = document.getElementById('quote-date');
+      
+      if (quoteCustNameEl) quoteCustNameEl.value = data.quoteCustomerName || data.customerName || '';
+      if (quoteNumberEl) quoteNumberEl.value = data.quoteNumber || '';
+      if (quoteDateEl) quoteDateEl.value = data.quoteDate || '';
+      
+      // Restore variables
+      rooms = data.rooms;
+      quotationItems = data.quotationItems || [];
+      nextId = data.nextId || (rooms.reduce((max, r) => Math.max(max, r.id), 0) + 1);
+      
+      // Trigger updates and re-renders
+      updateLiveArea();
+      renderTable();
+      renderSummary();
+      renderQuotation();
+      
+      alert('Plan loaded successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to load plan: ' + err.message);
+    }
+    event.target.value = ''; // clear file input
+  };
+  reader.readAsText(file);
+}
