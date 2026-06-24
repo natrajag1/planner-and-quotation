@@ -311,6 +311,13 @@
 
       <!-- Quotation Card Paper Sheet -->
       <section class="quotation-sheet card">
+        <div class="quote-company-header no-print">
+          <div class="quote-company-name">AG TRADERS</div>
+          <div class="quote-company-address">6/1C1, RING ROAD, KALLUPALAYAM, TIRUCHENGODE, NAMAKKAL - 637 209, TAMILNADU</div>
+          <div class="quote-company-phone">Mobile: 9489575108</div>
+        </div>
+        <hr class="quote-header-divider no-print" />
+
         <div class="quote-title-centered">QUOTATION</div>
         
         <div class="quote-header-grid">
@@ -326,6 +333,10 @@
             <div class="quote-meta-row">
               <label for="quote-date">Date:</label>
               <input type="text" id="quote-date" />
+            </div>
+            <div class="quote-meta-row">
+              <label for="quote-by">Quotation By:</label>
+              <input type="text" id="quote-by" placeholder="Prepared by name" />
             </div>
           </div>
         </div>
@@ -422,6 +433,13 @@
 
   <!-- Print Template (Quotation) -->
   <div id="print-quotation-area" class="print-quotation-area">
+    <div class="print-quote-company-header">
+      <div class="print-quote-company-name">AG TRADERS</div>
+      <div class="print-quote-company-address">6/1C1, RING ROAD, KALLUPALAYAM, TIRUCHENGODE, NAMAKKAL - 637 209, TAMILNADU</div>
+      <div class="print-quote-company-phone">Mobile: 9489575108</div>
+    </div>
+    <hr class="print-quote-header-divider" />
+
     <div class="print-quote-header">
       <div class="print-quote-title">QUOTATION</div>
     </div>
@@ -434,6 +452,7 @@
       <div class="print-quote-numbers">
         <div><span class="print-meta-label">Quotation No:</span> <span id="print-quote-number" class="print-meta-val">Q-001</span></div>
         <div style="margin-top: 4px;"><span class="print-meta-label">Date:</span> <span id="print-quote-date" class="print-meta-val">20/06/2026</span></div>
+        <div style="margin-top: 4px;"><span class="print-meta-label">Quotation By:</span> <span id="print-quote-by" class="print-meta-val">—</span></div>
       </div>
     </div>
 

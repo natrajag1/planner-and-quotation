@@ -966,6 +966,9 @@ function clearAll() {
   const quoteCustNameEl = document.getElementById('quote-customer-name');
   if (quoteCustNameEl) quoteCustNameEl.value = '';
   
+  const quoteByEl = document.getElementById('quote-by');
+  if (quoteByEl) quoteByEl.value = '';
+  
   renderTable();
   renderSummary();
   if (typeof renderQuotation === 'function') renderQuotation();
@@ -1337,10 +1340,12 @@ function printQuotation() {
   const custName = document.getElementById('quote-customer-name').value || '–';
   const quoteNo  = document.getElementById('quote-number').value || '–';
   const quoteDate= document.getElementById('quote-date').value || '–';
+  const quoteBy  = document.getElementById('quote-by').value || '–';
   
   document.getElementById('print-quote-customer').textContent = custName;
   document.getElementById('print-quote-number').textContent = quoteNo;
   document.getElementById('print-quote-date').textContent = quoteDate;
+  document.getElementById('print-quote-by').textContent = quoteBy;
   
   document.getElementById('print-quote-tbody').innerHTML = quotationItems.map((item, idx) => {
     const hasCoverage = item.coverage && item.coverage > 0;
@@ -1570,16 +1575,23 @@ function savePlanToCloud() {
   const quoteCustNameEl = document.getElementById('quote-customer-name');
   const quoteNumberEl   = document.getElementById('quote-number');
   const quoteDateEl     = document.getElementById('quote-date');
+  const quoteByEl       = document.getElementById('quote-by');
   
   const quoteCustName = quoteCustNameEl ? quoteCustNameEl.value.trim() : '';
   const quoteNumber   = quoteNumberEl ? quoteNumberEl.value.trim() : '';
   const quoteDate     = quoteDateEl ? quoteDateEl.value.trim() : '';
+  const quoteBy       = quoteByEl ? quoteByEl.value.trim() : '';
+
+  let planNotesToSave = planNotes;
+  if (quoteBy) {
+    planNotesToSave += `\n[quote_by:${quoteBy}]`;
+  }
   
   const payload = {
     customer_name: custName,
     customer_phone: custPhone,
     plan_date: planDate || null,
-    plan_notes: planNotes,
+    plan_notes: planNotesToSave,
     rooms: rooms,
     quotation_items: quotationItems,
     quote_customer_name: quoteCustName,
@@ -1703,11 +1715,14 @@ function renderCloudEstimatesList(list) {
       formattedDate = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
     }
 
+    let cleanNotes = item.plan_notes || '';
+    cleanNotes = cleanNotes.replace(/\n?\[quote_by:(.*?)\]$/, '').trim();
+
     row.innerHTML = `
       <td><strong>${item.customer_name || 'Untitled'}</strong></td>
       <td>${item.customer_phone || '—'}</td>
       <td>${formattedDate}</td>
-      <td><span style="font-size:0.8rem; color:var(--text3);">${item.plan_notes || '—'}</span></td>
+      <td><span style="font-size:0.8rem; color:var(--text3);">${cleanNotes || '—'}</span></td>
       <td class="cloud-action-cell">
         <button class="btn btn-primary" onclick="loadCloudEstimate('${item.id}')">Load</button>
         <button class="btn btn-danger-ghost" onclick="deleteCloudEstimate('${item.id}')" title="Delete from cloud">
@@ -1755,19 +1770,30 @@ function loadCloudEstimate(id) {
         console.error("Load cloud estimate error:", error);
         alert("Failed to load estimate: " + error.message);
       } else if (data) {
+        // Extract quoteBy from plan_notes
+        let planNotes = data.plan_notes || '';
+        let quoteBy = '';
+        const match = planNotes.match(/\[quote_by:(.*?)\]$/);
+        if (match) {
+          quoteBy = match[1];
+          planNotes = planNotes.replace(/\n?\[quote_by:(.*?)\]$/, '');
+        }
+
         // Populate inputs
         document.getElementById('customer-name').value = data.customer_name || '';
         document.getElementById('customer-phone').value = data.customer_phone || '';
         document.getElementById('plan-date').value = data.plan_date || '';
-        document.getElementById('plan-notes').value = data.plan_notes || '';
+        document.getElementById('plan-notes').value = planNotes;
 
         const quoteCustNameEl = document.getElementById('quote-customer-name');
         const quoteNumberEl   = document.getElementById('quote-number');
         const quoteDateEl     = document.getElementById('quote-date');
+        const quoteByEl       = document.getElementById('quote-by');
 
         if (quoteCustNameEl) quoteCustNameEl.value = data.quote_customer_name || data.customer_name || '';
         if (quoteNumberEl) quoteNumberEl.value = data.quote_number || '';
         if (quoteDateEl) quoteDateEl.value = data.quote_date || '';
+        if (quoteByEl) quoteByEl.value = quoteBy || '';
 
         // Restore state variables
         rooms = data.rooms || [];
@@ -1835,10 +1861,12 @@ function savePlan() {
   const quoteCustNameEl = document.getElementById('quote-customer-name');
   const quoteNumberEl   = document.getElementById('quote-number');
   const quoteDateEl     = document.getElementById('quote-date');
+  const quoteByEl       = document.getElementById('quote-by');
   
   const quoteCustName = quoteCustNameEl ? quoteCustNameEl.value.trim() : '';
   const quoteNumber   = quoteNumberEl ? quoteNumberEl.value.trim() : '';
   const quoteDate     = quoteDateEl ? quoteDateEl.value.trim() : '';
+  const quoteBy       = quoteByEl ? quoteByEl.value.trim() : '';
   
   const payload = {
     customerName: custName,
@@ -1850,6 +1878,7 @@ function savePlan() {
     quoteCustomerName: quoteCustName,
     quoteNumber: quoteNumber,
     quoteDate: quoteDate,
+    quoteBy: quoteBy,
     nextId: nextId
   };
   
@@ -1900,10 +1929,12 @@ function handleLoadPlan(event) {
       const quoteCustNameEl = document.getElementById('quote-customer-name');
       const quoteNumberEl   = document.getElementById('quote-number');
       const quoteDateEl     = document.getElementById('quote-date');
+      const quoteByEl       = document.getElementById('quote-by');
       
       if (quoteCustNameEl) quoteCustNameEl.value = data.quoteCustomerName || data.customerName || '';
       if (quoteNumberEl) quoteNumberEl.value = data.quoteNumber || '';
       if (quoteDateEl) quoteDateEl.value = data.quoteDate || '';
+      if (quoteByEl) quoteByEl.value = data.quoteBy || '';
       
       // Restore variables
       rooms = data.rooms;

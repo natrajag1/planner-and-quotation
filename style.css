@@ -469,6 +469,40 @@ input::placeholder { color: var(--text3); }
   margin-left: auto;
   margin-right: auto;
 }
+.quote-company-header {
+  text-align: center;
+  margin-bottom: 1.2rem;
+}
+.quote-company-name {
+  font-family: var(--font-title);
+  font-size: 1.95rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+  background: linear-gradient(135deg, #a78bfa, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.quote-company-address {
+  font-size: 0.88rem;
+  color: var(--text2);
+  line-height: 1.45;
+  max-width: 650px;
+  margin: 0 auto 0.25rem;
+}
+.quote-company-phone {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text3);
+}
+.quote-header-divider {
+  border: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  margin-bottom: 1.5rem;
+}
 .quotation-sheet {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--card-border);
@@ -736,7 +770,36 @@ input::placeholder { color: var(--text3); }
     color: #000;
     font-family: 'Inter', sans-serif;
     width: 100%;
-    padding-top: 3.5cm; /* Space to clear physical pre-printed letterhead */
+    padding-top: 0.5cm; /* Space reduced for digital letterhead header */
+  }
+  .print-quote-company-header {
+    text-align: center;
+    margin-bottom: 0.3cm;
+  }
+  .print-quote-company-name {
+    font-size: 20pt;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    color: #000;
+    margin-bottom: 0.08cm;
+  }
+  .print-quote-company-address {
+    font-size: 9.5pt;
+    color: #374151;
+    line-height: 1.4;
+    max-width: 85%;
+    margin: 0 auto 0.08cm;
+  }
+  .print-quote-company-phone {
+    font-size: 10.5pt;
+    font-weight: 700;
+    color: #000;
+  }
+  .print-quote-header-divider {
+    border: 0;
+    border-top: 1px solid #d1d5db;
+    margin-top: 0.2cm;
+    margin-bottom: 0.4cm;
   }
   .print-quote-header {
     display: flex;
