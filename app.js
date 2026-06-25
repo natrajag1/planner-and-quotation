@@ -445,6 +445,9 @@ function handleCSVUpload(event) {
       } else {
         renderDropdown();
       }
+      if (currentTab === 'catalog') {
+        renderCatalogTable(currentCatalogFilter);
+      }
     } else {
       alert('Could not find any valid tile data in the selected CSV file. Please make sure it has at least the columns: Name, Area Coverage.');
     }
@@ -1091,22 +1094,34 @@ function switchTab(tabName) {
   currentTab = tabName;
   const plannerTabBtn = document.getElementById('tab-planner');
   const quotationTabBtn = document.getElementById('tab-quotation');
+  const catalogTabBtn = document.getElementById('tab-catalog');
+  
   const plannerView = document.getElementById('planner-view');
   const quotationView = document.getElementById('quotation-view');
+  const catalogView = document.getElementById('catalog-view');
+  
+  // Reset all
+  plannerTabBtn.classList.remove('active');
+  quotationTabBtn.classList.remove('active');
+  if (catalogTabBtn) catalogTabBtn.classList.remove('active');
+  
+  plannerView.style.display = 'none';
+  quotationView.style.display = 'none';
+  if (catalogView) catalogView.style.display = 'none';
+  
+  document.body.classList.remove('print-quote-mode');
   
   if (tabName === 'planner') {
     plannerTabBtn.classList.add('active');
-    quotationTabBtn.classList.remove('active');
     plannerView.style.display = 'block';
-    quotationView.style.display = 'none';
-    document.body.classList.remove('print-quote-mode');
+  } else if (tabName === 'catalog') {
+    if (catalogTabBtn) catalogTabBtn.classList.add('active');
+    if (catalogView) catalogView.style.display = 'block';
+    renderCatalogTable();
   } else {
-    plannerTabBtn.classList.remove('active');
     quotationTabBtn.classList.add('active');
-    plannerView.style.display = 'none';
     quotationView.style.display = 'block';
     document.body.classList.add('print-quote-mode');
-    
     generateQuotationFromPlan();
   }
 }
@@ -1960,3 +1975,133 @@ function handleLoadPlan(event) {
   };
   reader.readAsText(file);
 }
+
+// ─── Catalog Management ──────────────────────────────────────────
+let currentCatalogFilter = '';
+
+function renderCatalogTable(searchQuery = '') {
+  currentCatalogFilter = searchQuery.toLowerCase().trim();
+  const tbody = document.getElementById('catalog-tbody');
+  const countHeader = document.getElementById('catalog-count-header');
+  if (!tbody || !countHeader) return;
+
+  tbody.innerHTML = '';
+
+  const filteredDB = TILE_DB.filter(item => 
+    item.name.toLowerCase().includes(currentCatalogFilter)
+  );
+  
+  countHeader.textContent = `Catalog Database (${filteredDB.length} Items)`;
+
+  if (filteredDB.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text3); padding: 2rem;">No products found in catalog.</td></tr>`;
+    return;
+  }
+
+  filteredDB.forEach((item) => {
+    // We need the original index in TILE_DB for deletion
+    const originalIndex = TILE_DB.findIndex(dbItem => dbItem.name === item.name);
+    
+    const tr = document.createElement('tr');
+    
+    // Formatting values
+    const coverage = item.coverage ? item.coverage.toFixed(2) : '--';
+    const weight = item.weight ? item.weight.toFixed(2) : '--';
+    const rateStr = (item.price || item.rate) ? `₹ ${parseFloat(item.price || item.rate).toFixed(2)}` : '--';
+
+    tr.innerHTML = `
+      <td class="item-name">${item.name}</td>
+      <td style="text-align: center;">${coverage}</td>
+      <td style="text-align: center;">${weight}</td>
+      <td style="text-align: right; font-weight: 600;">${rateStr}</td>
+      <td style="text-align: center;">
+        <button class="btn-icon-del" onclick="deleteProductFromCatalog(${originalIndex})" title="Delete Product" style="margin: 0 auto;">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function filterCatalog() {
+  const query = document.getElementById('catalog-search-input').value;
+  renderCatalogTable(query);
+}
+
+function saveProductToCatalog() {
+  const nameInput = document.getElementById('new-product-name');
+  const coverageInput = document.getElementById('new-product-coverage');
+  const weightInput = document.getElementById('new-product-weight');
+  const rateInput = document.getElementById('new-product-rate');
+
+  const name = nameInput.value.trim().toUpperCase();
+  const coverage = parseFloat(coverageInput.value);
+  const weight = parseFloat(weightInput.value);
+  const rate = parseFloat(rateInput.value);
+
+  if (!name) {
+    alert("Product Name / Description is required.");
+    return;
+  }
+  if (isNaN(coverage) || coverage <= 0) {
+    alert("Please enter a valid Coverage > 0.");
+    return;
+  }
+  if (isNaN(weight) || weight <= 0) {
+    alert("Please enter a valid Weight > 0.");
+    return;
+  }
+
+  // Check for duplicates
+  const existingIndex = TILE_DB.findIndex(item => item.name === name);
+  if (existingIndex !== -1) {
+    const confirmOverwrite = confirm(`Product "${name}" already exists. Overwrite it?`);
+    if (!confirmOverwrite) return;
+    
+    // Update existing
+    TILE_DB[existingIndex] = {
+      name: name,
+      coverage: coverage,
+      weight: weight,
+      price: isNaN(rate) ? 0 : rate // using price as standard based on CSV logic
+    };
+  } else {
+    // Add new
+    TILE_DB.unshift({ // Add to top
+      name: name,
+      coverage: coverage,
+      weight: weight,
+      price: isNaN(rate) ? 0 : rate
+    });
+  }
+
+  // Save to local storage
+  localStorage.setItem('cached_tile_db', JSON.stringify(TILE_DB));
+
+  // Re-render things
+  renderCatalogTable(currentCatalogFilter);
+  filteredTiles = [...TILE_DB];
+  if (typeof renderDropdown === 'function') renderDropdown();
+  
+  // Clear form
+  nameInput.value = '';
+  coverageInput.value = '';
+  weightInput.value = '';
+  rateInput.value = '';
+  nameInput.focus();
+}
+
+function deleteProductFromCatalog(index) {
+  if (index < 0 || index >= TILE_DB.length) return;
+  
+  const item = TILE_DB[index];
+  if (confirm(`Are you sure you want to delete "${item.name}" from the catalog?`)) {
+    TILE_DB.splice(index, 1);
+    localStorage.setItem('cached_tile_db', JSON.stringify(TILE_DB));
+    renderCatalogTable(currentCatalogFilter);
+    filteredTiles = [...TILE_DB];
+    if (typeof renderDropdown === 'function') renderDropdown();
+  }
+}
+

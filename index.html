@@ -59,6 +59,9 @@
         <button id="tab-quotation" class="tab-btn" onclick="switchTab('quotation')">
           💼 Quotation
         </button>
+        <button id="tab-catalog" class="tab-btn" onclick="switchTab('catalog')">
+          📦 Products
+        </button>
       </div>
     </div>
 
@@ -408,6 +411,76 @@
         </div>
       </section>
     </div> <!-- End of #quotation-view -->
+
+    <div id="catalog-view" style="display: none;">
+      <div class="catalog-container">
+        <!-- Add Product Form -->
+        <section class="card catalog-form-card">
+          <div class="catalog-form-header">
+            <h3>Add Product to Catalog</h3>
+            <p>Saved items will be available in the tile dropdowns</p>
+          </div>
+          <div class="catalog-form-body">
+            <div class="field-group">
+              <label for="new-product-name">Product Name / Description</label>
+              <input type="text" id="new-product-name" placeholder="e.g. HG IMPALA BLACK 48X24" autocomplete="off" />
+            </div>
+            
+            <div class="form-row catalog-form-row">
+              <div class="field-group">
+                <label for="new-product-coverage">Coverage (Sqft/Box)</label>
+                <input type="number" id="new-product-coverage" placeholder="15.5" step="0.01" min="0" />
+              </div>
+              <div class="field-group">
+                <label for="new-product-weight">Weight (kg/Box)</label>
+                <input type="number" id="new-product-weight" placeholder="26" step="0.1" min="0" />
+              </div>
+            </div>
+            
+            <div class="field-group" style="margin-bottom: 0.5rem;">
+              <label for="new-product-rate">Unit Rate (₹ per Box)</label>
+              <input type="number" id="new-product-rate" placeholder="0.00" step="1" min="0" />
+            </div>
+            
+            <button class="btn btn-primary w-100 catalog-save-btn" onclick="saveProductToCatalog()">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+              Save Product to Catalog
+            </button>
+          </div>
+        </section>
+
+        <!-- Catalog Database Table -->
+        <section class="card catalog-table-card">
+          <div class="catalog-table-header">
+            <div class="catalog-header-text">
+              <h3 id="catalog-count-header">Catalog Database (0 Items)</h3>
+              <p>Includes default library and your custom entries</p>
+            </div>
+            <div class="catalog-search-bar">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="catalog-search-input" placeholder="Search product catalog..." oninput="filterCatalog()" />
+            </div>
+          </div>
+          
+          <div class="catalog-table-wrapper">
+            <table class="catalog-table">
+              <thead>
+                <tr>
+                  <th>Product Name</th>
+                  <th style="width: 100px; text-align: center;">Coverage</th>
+                  <th style="width: 100px; text-align: center;">Weight</th>
+                  <th style="width: 120px; text-align: right;">Rate</th>
+                  <th style="width: 80px; text-align: center;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="catalog-tbody">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
   </main>
 
   <!-- Print Template -->
