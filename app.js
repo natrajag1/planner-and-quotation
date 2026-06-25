@@ -1090,6 +1090,17 @@ shakeStyle.textContent = `
 document.head.appendChild(shakeStyle);
 
 // ─── Quotation Management ───────────────────────────────────────
+function switchTabWithAuth(tabName) {
+  if (tabName === 'catalog') {
+    const code = prompt("Enter Admin Passcode to manage products:");
+    if (code !== "admin123") { 
+      alert("Incorrect passcode! Access denied.");
+      return;
+    }
+  }
+  switchTab(tabName);
+}
+
 function switchTab(tabName) {
   currentTab = tabName;
   const plannerTabBtn = document.getElementById('tab-planner');
