@@ -24,6 +24,13 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+  <div class="ambient-bg" aria-hidden="true">
+    <div class="ambient-orb ambient-orb-1"></div>
+    <div class="ambient-orb ambient-orb-2"></div>
+    <div class="ambient-orb ambient-orb-3"></div>
+    <div class="ambient-grid"></div>
+  </div>
+
   <!-- Header -->
   <header class="header">
     <div class="header-top">
@@ -135,9 +142,9 @@
   </header>
 
   <main class="main">
-    <div id="planner-view">
+    <div id="planner-view" class="view-panel view-visible">
     <!-- Customer Info Bar -->
-    <section class="customer-bar card">
+    <section class="customer-bar card animate-section">
       <div class="customer-bar-header no-print">
         <span class="customer-bar-title">PLAN STATE</span>
         <span id="active-estimate-status" class="badge badge-blue">✏️ New Plan</span>
@@ -163,7 +170,7 @@
     </section>
 
     <!-- Add Room Form -->
-    <section class="add-room-section card">
+    <section class="add-room-section card animate-section">
       <div class="section-header">
         <h2 class="section-title">
           <span class="section-icon">🏠</span>
@@ -241,7 +248,7 @@
     </section>
 
     <!-- Room List Table -->
-    <section class="rooms-section card" id="rooms-section">
+    <section class="rooms-section card animate-section" id="rooms-section">
       <div class="section-header">
         <h2 class="section-title">
           <span class="section-icon">📋</span>
@@ -322,9 +329,10 @@
         </div>
         <div id="tile-summary-content"></div>
       </div>
+    </section>
     </div> <!-- End of #planner-view -->
 
-    <div id="quotation-view" style="display: none;">
+    <div id="quotation-view" class="view-panel" style="display: none;">
       <!-- Quotation Header Options (on screen) -->
       <div class="quote-screen-actions no-print">
         <button id="btn-print-quote" class="btn btn-primary" onclick="printQuotation()">
@@ -413,7 +421,7 @@
       </section>
     </div> <!-- End of #quotation-view -->
 
-    <div id="catalog-view" style="display: none;">
+    <div id="catalog-view" class="view-panel" style="display: none;">
       <div class="catalog-container">
         <!-- Add Product Form -->
         <section class="card catalog-form-card">

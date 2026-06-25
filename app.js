@@ -309,6 +309,7 @@ let TILE_DB = [
 // ─── State ─────────────────────────────────────────────────────
 let rooms = [];
 let nextId = 1;
+let lastAddedRoomId = null;
 let selectedTile = null;
 let highlightedIdx = -1;
 let filteredTiles = [];
@@ -468,6 +469,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   loadCSVOnStartup();
 
+  initVisualEffects();
+
   // Register PWA Service Worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js')
@@ -591,11 +594,62 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ─── Live Area ──────────────────────────────────────────────────
+function initVisualEffects() {
+  const header = document.querySelector('.header');
+  if (header) {
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > 8);
+    }, { passive: true });
+  }
+}
+
+function popValue(el) {
+  if (!el) return;
+  el.classList.remove('value-pop');
+  void el.offsetWidth;
+  el.classList.add('value-pop');
+}
+
+function setSummaryValue(id, text) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (el.textContent !== text) {
+    el.textContent = text;
+    popValue(el);
+  }
+}
+
+function showViewPanel(view) {
+  if (!view) return;
+  view.style.display = 'block';
+  view.classList.remove('view-hidden');
+  requestAnimationFrame(() => view.classList.add('view-visible'));
+}
+
+function hideViewPanel(view, onDone) {
+  if (!view || view.style.display === 'none') {
+    if (onDone) onDone();
+    return;
+  }
+  view.classList.remove('view-visible');
+  view.classList.add('view-hidden');
+  setTimeout(() => {
+    view.style.display = 'none';
+    view.classList.remove('view-hidden');
+    if (onDone) onDone();
+  }, 300);
+}
+
 function updateLiveArea() {
   const l = parseFloat(roomLengthEl().value) || 0;
   const b = parseFloat(roomBreadthEl().value) || 0;
   const area = l * b;
-  liveAreaEl().textContent = area > 0 ? area.toFixed(2) + ' sqft' : '–';
+  const areaEl = liveAreaEl();
+  const newText = area > 0 ? area.toFixed(2) + ' sqft' : '–';
+  if (areaEl.textContent !== newText) {
+    areaEl.textContent = newText;
+    if (area > 0) popValue(areaEl);
+  }
   updateLiveBoxes();
 }
 
@@ -614,7 +668,11 @@ function updateLiveBoxes() {
     if (finalBoxesDiv) finalBoxesDiv.style.display  = 'flex';
     
     const boxesExact = area / selectedTile.coverage;
-    if (liveBoxesEl) liveBoxesEl.textContent = boxesExact.toFixed(2) + ' boxes';
+    const newText = boxesExact.toFixed(2) + ' boxes';
+    if (liveBoxesEl && liveBoxesEl.textContent !== newText) {
+      liveBoxesEl.textContent = newText;
+      popValue(liveBoxesEl);
+    }
     if (finalBoxesEl) finalBoxesEl.value = Math.ceil(boxesExact);
   } else {
     if (actualBoxesDiv) actualBoxesDiv.style.display = 'none';
@@ -746,6 +804,7 @@ function addRoom() {
     boxesFinal: finalBoxes, 
     totalWeight
   });
+  lastAddedRoomId = rooms[rooms.length - 1].id;
 
   // Clear form
   roomNameEl().value   = '';
@@ -770,14 +829,13 @@ function deleteRoom(id) {
   if (idx >= 0) {
     const row = document.getElementById(`row-${id}`);
     if (row) {
-      row.style.transition = 'all 0.2s';
-      row.style.opacity = '0';
-      row.style.transform = 'translateX(20px)';
+      row.classList.add('row-exit');
       setTimeout(() => {
         rooms.splice(idx, 1);
         renderTable();
         renderSummary();
-      }, 200);
+      }, 250);
+      return;
     }
   }
 }
@@ -799,9 +857,16 @@ function renderTable() {
   empty.style.display = 'none';
   badge.style.display = 'flex';
   countEl.textContent = rooms.length;
+  badge.classList.remove('badge-pop');
+  void badge.offsetWidth;
+  badge.classList.add('badge-pop');
 
-  tbody.innerHTML = rooms.map((r, i) => `
-    <tr id="row-${r.id}" class="row-enter">
+  tbody.innerHTML = rooms.map((r, i) => {
+    const isNew = r.id === lastAddedRoomId;
+    const animClass = isNew ? 'row-enter' : '';
+    const style = isNew ? ` style="animation-delay:${Math.min(i * 0.04, 0.2)}s"` : '';
+    return `
+    <tr id="row-${r.id}" class="${animClass}"${style}>
       <td class="td-si">${i + 1}</td>
       <td class="td-room">${escHtml(r.name)}</td>
       <td class="td-size">${r.length} × ${r.breadth}</td>
@@ -819,8 +884,9 @@ function renderTable() {
           <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
         </button>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
+  lastAddedRoomId = null;
 }
 
 function updateRoomBoxes(id, newVal) {
@@ -848,10 +914,10 @@ function renderSummary() {
   const totalWeight = rooms.reduce((s, r) => s + r.totalWeight, 0);
   const totalArea   = rooms.reduce((s, r) => s + r.area, 0);
 
-  document.getElementById('total-boxes').textContent  = totalBoxes;
-  document.getElementById('total-weight').textContent = totalWeight + ' kg';
-  document.getElementById('total-area').textContent   = totalArea.toFixed(2) + ' sqft';
-  document.getElementById('total-rooms').textContent  = rooms.length;
+  setSummaryValue('total-boxes', String(totalBoxes));
+  setSummaryValue('total-weight', totalWeight + ' kg');
+  setSummaryValue('total-area', totalArea.toFixed(2) + ' sqft');
+  setSummaryValue('total-rooms', String(rooms.length));
 
   // Tile-wise summary
   const tileMap = {};
@@ -865,8 +931,8 @@ function renderSummary() {
 
   document.getElementById('tile-summary-content').innerHTML = `
     <div class="tile-summary-grid">
-      ${tileEntries.map(([name, data]) => `
-        <div class="tile-summary-item">
+      ${tileEntries.map(([name, data], idx) => `
+        <div class="tile-summary-item" style="animation-delay:${idx * 0.06}s">
           <span class="tile-summary-name">${escHtml(name)}</span>
           <span class="tile-summary-stats">
             <span class="tile-stat-badge tile-stat-boxes">📦 ${data.boxes} boxes</span>
@@ -1070,24 +1136,11 @@ function escHtml(str) {
 }
 
 function shake(el) {
-  el.style.animation = 'none';
-  el.offsetHeight; // reflow
-  el.style.animation = 'shake 0.35s ease';
-  setTimeout(() => { el.style.animation = ''; }, 400);
+  el.classList.remove('shake-anim');
+  void el.offsetWidth;
+  el.classList.add('shake-anim');
+  setTimeout(() => el.classList.remove('shake-anim'), 400);
 }
-
-// Add shake animation to CSS dynamically
-const shakeStyle = document.createElement('style');
-shakeStyle.textContent = `
-  @keyframes shake {
-    0%,100% { transform: translateX(0); }
-    20%      { transform: translateX(-6px); }
-    40%      { transform: translateX(6px); }
-    60%      { transform: translateX(-4px); }
-    80%      { transform: translateX(4px); }
-  }
-`;
-document.head.appendChild(shakeStyle);
 
 // ─── Quotation Management ───────────────────────────────────────
 function switchTabWithAuth(tabName) {
@@ -1106,35 +1159,33 @@ function switchTab(tabName) {
   const plannerTabBtn = document.getElementById('tab-planner');
   const quotationTabBtn = document.getElementById('tab-quotation');
   const catalogTabBtn = document.getElementById('tab-catalog');
-  
+
   const plannerView = document.getElementById('planner-view');
   const quotationView = document.getElementById('quotation-view');
   const catalogView = document.getElementById('catalog-view');
-  
-  // Reset all
+
+  const activeView = tabName === 'planner' ? plannerView
+    : tabName === 'catalog' ? catalogView
+    : quotationView;
+
   plannerTabBtn.classList.remove('active');
   quotationTabBtn.classList.remove('active');
   if (catalogTabBtn) catalogTabBtn.classList.remove('active');
-  
-  plannerView.style.display = 'none';
-  quotationView.style.display = 'none';
-  if (catalogView) catalogView.style.display = 'none';
-  
+
+  if (tabName === 'planner') plannerTabBtn.classList.add('active');
+  else if (tabName === 'catalog' && catalogTabBtn) catalogTabBtn.classList.add('active');
+  else quotationTabBtn.classList.add('active');
+
   document.body.classList.remove('print-quote-mode');
-  
-  if (tabName === 'planner') {
-    plannerTabBtn.classList.add('active');
-    plannerView.style.display = 'block';
-  } else if (tabName === 'catalog') {
-    if (catalogTabBtn) catalogTabBtn.classList.add('active');
-    if (catalogView) catalogView.style.display = 'block';
-    renderCatalogTable();
-  } else {
-    quotationTabBtn.classList.add('active');
-    quotationView.style.display = 'block';
-    document.body.classList.add('print-quote-mode');
-    generateQuotationFromPlan();
-  }
+  if (tabName === 'quotation') document.body.classList.add('print-quote-mode');
+
+  [plannerView, quotationView, catalogView].forEach(v => {
+    if (v && v !== activeView) hideViewPanel(v);
+  });
+  showViewPanel(activeView);
+
+  if (tabName === 'catalog') renderCatalogTable();
+  if (tabName === 'quotation') generateQuotationFromPlan();
 }
 
 function generateQuotationFromPlan() {
