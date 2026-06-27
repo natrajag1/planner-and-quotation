@@ -1161,8 +1161,19 @@ input::placeholder { color: var(--text3); }
     margin: 12mm 15mm;
   }
   
+  html, body {
+    width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  
   /* Hide screen layout entirely */
-  .header, .main { display: none !important; }
+  .header, .main, .ambient-bg { display: none !important; }
   
   /* Reset print container layout */
   .print-area {
