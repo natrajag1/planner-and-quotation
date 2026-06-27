@@ -924,7 +924,10 @@ function renderSummary() {
   const totalWeight = rooms.reduce((s, r) => s + r.totalWeight, 0);
   
   // Calculate total area excluding accessories/pastes
-  const totalArea = rooms.reduce((s, r) => {
+  let totalArea = 0;
+  let totalPasteArea = 0;
+  
+  rooms.forEach(r => {
     const dbTile = TILE_DB.find(t => t.name === r.tileName);
     const isAccessoryFlag = dbTile ? dbTile.isAccessory : false;
     
@@ -933,13 +936,23 @@ function renderSummary() {
     const isAccessoryHeuristic = n.includes('PASTE') || n.includes('ADHESIVE') || n.includes('EPOXY') || n.includes('GROUT') || n.includes('SPACER') || n.includes('KAG GOLD 20 KG') || n.includes('KAG DIAMOND 20 KG');
     
     const isAccessory = isAccessoryFlag || isAccessoryHeuristic;
-    return s + (isAccessory ? 0 : r.area);
-  }, 0);
+    if (isAccessory) {
+      totalPasteArea += r.area;
+    } else {
+      totalArea += r.area;
+    }
+  });
 
   setSummaryValue('total-boxes', String(totalBoxes));
   setSummaryValue('total-weight', totalWeight + ' kg');
   setSummaryValue('total-area', totalArea.toFixed(2) + ' sqft');
+  setSummaryValue('total-paste-area', totalPasteArea.toFixed(2) + ' sqft');
   setSummaryValue('total-rooms', String(rooms.length));
+  
+  const pasteCard = document.getElementById('summary-paste-card');
+  if (pasteCard) {
+    pasteCard.style.display = totalPasteArea > 0 ? 'flex' : 'none';
+  }
 
   // Tile-wise summary
   const tileMap = {};
@@ -1005,14 +1018,30 @@ function printPlan() {
   // Summary
   const totalBoxes  = rooms.reduce((s, r) => s + r.boxesFinal, 0);
   const totalWeight = rooms.reduce((s, r) => s + r.totalWeight, 0);
-  const totalArea   = rooms.reduce((s, r) => s + r.area, 0);
+  let totalArea = 0;
+  let totalPasteArea = 0;
+  rooms.forEach(r => {
+    const dbTile = TILE_DB.find(t => t.name === r.tileName);
+    const isAccessoryFlag = dbTile ? dbTile.isAccessory : false;
+    const n = r.tileName.toUpperCase();
+    const isAccessoryHeuristic = n.includes('PASTE') || n.includes('ADHESIVE') || n.includes('EPOXY') || n.includes('GROUT') || n.includes('SPACER') || n.includes('KAG GOLD 20 KG') || n.includes('KAG DIAMOND 20 KG');
+    const isAccessory = isAccessoryFlag || isAccessoryHeuristic;
+    if (isAccessory) totalPasteArea += r.area;
+    else totalArea += r.area;
+  });
 
-  document.getElementById('print-summary').innerHTML = `
+  let summaryHTML = `
     <div class="print-summary-box"><div class="print-summary-label">Total Rooms</div><div class="print-summary-value">${rooms.length}</div></div>
-    <div class="print-summary-box"><div class="print-summary-label">Total Area</div><div class="print-summary-value">${totalArea.toFixed(0)} sqft</div></div>
+    <div class="print-summary-box"><div class="print-summary-label">Total Tile Area</div><div class="print-summary-value">${totalArea.toFixed(0)} sqft</div></div>
     <div class="print-summary-box"><div class="print-summary-label">Total Boxes</div><div class="print-summary-value">${totalBoxes}</div></div>
     <div class="print-summary-box"><div class="print-summary-label">Total Weight</div><div class="print-summary-value">${totalWeight} kg</div></div>
   `;
+  
+  if (totalPasteArea > 0) {
+    summaryHTML += `<div class="print-summary-box"><div class="print-summary-label">Adhesive Area</div><div class="print-summary-value">${totalPasteArea.toFixed(0)} sqft</div></div>`;
+  }
+  
+  document.getElementById('print-summary').innerHTML = summaryHTML;
 
   // Tile-wise summary
   const tileMap = {};
