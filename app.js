@@ -912,7 +912,19 @@ function renderSummary() {
 
   const totalBoxes  = rooms.reduce((s, r) => s + r.boxesFinal, 0);
   const totalWeight = rooms.reduce((s, r) => s + r.totalWeight, 0);
-  const totalArea   = rooms.reduce((s, r) => s + r.area, 0);
+  
+  // Calculate total area excluding accessories/pastes
+  const totalArea = rooms.reduce((s, r) => {
+    const dbTile = TILE_DB.find(t => t.name === r.tileName);
+    const isAccessoryFlag = dbTile ? dbTile.isAccessory : false;
+    
+    // Fallback heuristic for existing items added before the checkbox feature
+    const n = r.tileName.toUpperCase();
+    const isAccessoryHeuristic = n.includes('PASTE') || n.includes('ADHESIVE') || n.includes('EPOXY') || n.includes('GROUT') || n.includes('SPACER') || n.includes('KAG GOLD 20 KG') || n.includes('KAG DIAMOND 20 KG');
+    
+    const isAccessory = isAccessoryFlag || isAccessoryHeuristic;
+    return s + (isAccessory ? 0 : r.area);
+  }, 0);
 
   setSummaryValue('total-boxes', String(totalBoxes));
   setSummaryValue('total-weight', totalWeight + ' kg');
@@ -2079,9 +2091,12 @@ function renderCatalogTable(searchQuery = '') {
     const coverage = item.coverage ? item.coverage.toFixed(2) : '--';
     const weight = item.weight ? item.weight.toFixed(2) : '--';
     const rateStr = (item.price || item.rate) ? `₹ ${parseFloat(item.price || item.rate).toFixed(2)}` : '--';
+    
+    // Accessory badge
+    const accessoryBadge = item.isAccessory ? `<span style="font-size: 0.6rem; padding: 0.15rem 0.3rem; margin-left: 0.5rem; background: rgba(245, 158, 11, 0.2); color: #fbbf24; border-radius: 4px; font-weight: 600; white-space: nowrap;">🛠 Paste/Accessory</span>` : '';
 
     tr.innerHTML = `
-      <td class="item-name">${item.name}</td>
+      <td class="item-name" style="display:flex; align-items:center;">${item.name} ${accessoryBadge}</td>
       <td style="text-align: center;">${coverage}</td>
       <td style="text-align: center;">${weight}</td>
       <td style="text-align: right; font-weight: 600;">${rateStr}</td>
@@ -2105,11 +2120,13 @@ function saveProductToCatalog() {
   const coverageInput = document.getElementById('new-product-coverage');
   const weightInput = document.getElementById('new-product-weight');
   const rateInput = document.getElementById('new-product-rate');
+  const accessoryInput = document.getElementById('new-product-is-accessory');
 
   const name = nameInput.value.trim().toUpperCase();
   const coverage = parseFloat(coverageInput.value);
   const weight = parseFloat(weightInput.value);
   const rate = parseFloat(rateInput.value);
+  const isAccessory = accessoryInput ? accessoryInput.checked : false;
 
   if (!name) {
     alert("Product Name / Description is required.");
@@ -2135,7 +2152,8 @@ function saveProductToCatalog() {
       name: name,
       coverage: coverage,
       weight: weight,
-      price: isNaN(rate) ? 0 : rate // using price as standard based on CSV logic
+      price: isNaN(rate) ? 0 : rate, // using price as standard based on CSV logic
+      isAccessory: isAccessory
     };
   } else {
     // Add new
@@ -2143,7 +2161,8 @@ function saveProductToCatalog() {
       name: name,
       coverage: coverage,
       weight: weight,
-      price: isNaN(rate) ? 0 : rate
+      price: isNaN(rate) ? 0 : rate,
+      isAccessory: isAccessory
     });
   }
 
@@ -2160,6 +2179,7 @@ function saveProductToCatalog() {
   coverageInput.value = '';
   weightInput.value = '';
   rateInput.value = '';
+  if(accessoryInput) accessoryInput.checked = false;
   nameInput.focus();
 }
 
