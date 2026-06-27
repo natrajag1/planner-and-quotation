@@ -1154,6 +1154,15 @@ function switchTabWithAuth(tabName) {
   switchTab(tabName);
 }
 
+function openSettingsWithAuth() {
+  const code = prompt("Enter Admin Passcode to open settings:");
+  if (code !== "admin123") { 
+    alert("Incorrect passcode! Access denied.");
+    return;
+  }
+  document.getElementById('settings-modal').showModal();
+}
+
 function switchTab(tabName) {
   currentTab = tabName;
   const plannerTabBtn = document.getElementById('tab-planner');
