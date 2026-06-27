@@ -320,7 +320,7 @@ let currentTab = 'planner';
 const roomNameEl   = () => document.getElementById('room-name');
 const roomLengthEl = () => document.getElementById('room-length');
 const roomBreadthEl= () => document.getElementById('room-breadth');
-const liveAreaEl   = () => document.getElementById('live-area');
+const liveAreaEl   = () => document.getElementById('live-area-input');
 const tileSearchEl = () => document.getElementById('tile-search');
 const tileDropEl   = () => document.getElementById('tile-dropdown');
 const finalBoxesEl  = () => document.getElementById('final-boxes');
@@ -533,6 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Live area calculation
   roomLengthEl().addEventListener('input', updateLiveArea);
   roomBreadthEl().addEventListener('input', updateLiveArea);
+  liveAreaEl().addEventListener('input', updateLiveBoxes);
 
   // Tile search
   tileSearchEl().addEventListener('input', onTileSearch);
@@ -643,20 +644,23 @@ function hideViewPanel(view, onDone) {
 function updateLiveArea() {
   const l = parseFloat(roomLengthEl().value) || 0;
   const b = parseFloat(roomBreadthEl().value) || 0;
-  const area = l * b;
   const areaEl = liveAreaEl();
-  const newText = area > 0 ? area.toFixed(2) + ' sqft' : '–';
-  if (areaEl.textContent !== newText) {
-    areaEl.textContent = newText;
-    if (area > 0) popValue(areaEl);
+  
+  // Only override the area if both L and B are positive.
+  // This allows manual entry to persist if L or B are empty.
+  if (l > 0 && b > 0) {
+    const area = l * b;
+    const newText = area.toFixed(2);
+    if (areaEl.value !== newText) {
+      areaEl.value = newText;
+      popValue(areaEl);
+    }
   }
   updateLiveBoxes();
 }
 
 function updateLiveBoxes() {
-  const l = parseFloat(roomLengthEl().value) || 0;
-  const b = parseFloat(roomBreadthEl().value) || 0;
-  const area = l * b;
+  const area = parseFloat(liveAreaEl().value) || 0;
 
   const actualBoxesDiv = document.getElementById('actual-boxes-display');
   const finalBoxesDiv  = document.getElementById('final-boxes-input-group');
@@ -678,6 +682,7 @@ function updateLiveBoxes() {
     if (actualBoxesDiv) actualBoxesDiv.style.display = 'none';
     if (finalBoxesDiv) finalBoxesDiv.style.display  = 'none';
     if (liveBoxesEl) liveBoxesEl.textContent = '–';
+    if (finalBoxesEl) finalBoxesEl.value = '';
   }
 }
 
@@ -775,14 +780,20 @@ function selectTile(idx) {
 // ─── Add Room ───────────────────────────────────────────────────
 function addRoom() {
   const name   = roomNameEl().value.trim();
-  const length = parseFloat(roomLengthEl().value);
-  const breadth= parseFloat(roomBreadthEl().value);
+  const length = parseFloat(roomLengthEl().value) || 0;
+  const breadth= parseFloat(roomBreadthEl().value) || 0;
   const finalBoxes = parseInt(document.getElementById('final-boxes').value, 10);
+  
+  const manualArea = parseFloat(liveAreaEl().value) || 0;
+  const area = manualArea > 0 ? manualArea : (length * breadth);
 
   // Validation
   if (!name) { shake(roomNameEl()); roomNameEl().focus(); return; }
-  if (!length || length <= 0) { shake(roomLengthEl()); roomLengthEl().focus(); return; }
-  if (!breadth || breadth <= 0) { shake(roomBreadthEl()); roomBreadthEl().focus(); return; }
+  if (area <= 0) { 
+    shake(liveAreaEl()); 
+    liveAreaEl().focus(); 
+    return; 
+  }
   if (!selectedTile) { shake(tileSearchEl()); tileSearchEl().focus(); return; }
   if (isNaN(finalBoxes) || finalBoxes <= 0) { 
     shake(document.getElementById('final-boxes')); 
@@ -790,7 +801,6 @@ function addRoom() {
     return; 
   }
 
-  const area = length * breadth;
   const boxesExact = area / selectedTile.coverage;
   const totalWeight = finalBoxes * selectedTile.weight;
 
@@ -810,7 +820,7 @@ function addRoom() {
   roomNameEl().value   = '';
   roomLengthEl().value = '';
   roomBreadthEl().value= '';
-  liveAreaEl().textContent = '–';
+  liveAreaEl().value   = '';
   tileSearchEl().value = '';
   selectedTile = null;
   document.getElementById('tile-info-display').style.display = 'none';
