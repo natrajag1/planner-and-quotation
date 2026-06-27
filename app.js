@@ -1066,9 +1066,9 @@ function printPlan() {
     </div>
   `;
 
-  setTimeout(() => {
-    window.print();
-  }, 100);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => window.print());
+  });
 }
 
 // ─── Clear All ──────────────────────────────────────────────────
@@ -1506,9 +1506,9 @@ function printQuotation() {
   document.getElementById('print-quote-grand-total').textContent = '₹ ' + grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   document.getElementById('print-quote-amount-words').textContent = numberToWordsINR(Math.round(grandTotal));
   
-  setTimeout(() => {
-    window.print();
-  }, 100);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => window.print());
+  });
 }
 
 function numberToWordsINR(num) {

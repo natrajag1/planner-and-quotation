@@ -1144,16 +1144,9 @@ input::placeholder { color: var(--text3); }
 }
 
 
-.print-area, .print-quotation-area { 
-  position: absolute; 
-  top: -9999px; 
-  left: -9999px; 
-  width: 100%; 
-  visibility: hidden; 
-  opacity: 0;
-  pointer-events: none;
-  z-index: -1;
-}
+/* ─── Print Styles ────────────────────────────────────────────── */
+.print-area { display: none; }
+.print-quotation-area { display: none; }
 
 @media print {
   @page {
@@ -1178,9 +1171,6 @@ input::placeholder { color: var(--text3); }
   /* Reset print container layout */
   .print-area {
     display: block !important;
-    position: static !important;
-    visibility: visible !important;
-    opacity: 1 !important;
     width: 100%;
     background: #fff;
     color: #000;
@@ -1249,12 +1239,7 @@ input::placeholder { color: var(--text3); }
   
   /* Print Quotation Configuration */
   body.print-quote-mode .print-area { display: none !important; }
-  body.print-quote-mode .print-quotation-area { 
-    display: block !important; 
-    position: static !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
+  body.print-quote-mode .print-quotation-area { display: block !important; }
   
   .print-quotation-area {
     background: #fff;
