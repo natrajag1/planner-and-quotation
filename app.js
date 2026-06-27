@@ -879,7 +879,7 @@ function renderTable() {
     <tr id="row-${r.id}" class="${animClass}"${style}>
       <td class="td-si">${i + 1}</td>
       <td class="td-room">${escHtml(r.name)}</td>
-      <td class="td-size">${r.length} × ${r.breadth}</td>
+      <td class="td-size">${(r.length > 0 && r.breadth > 0) ? `${r.length} × ${r.breadth}` : ''}</td>
       <td class="td-area">${r.area.toFixed(2)}</td>
       <td class="td-tile"><span class="td-tile-name" title="${escHtml(r.tileName)}">${escHtml(r.tileName)}</span></td>
       <td class="td-cov">${r.coverage} sqft</td>
