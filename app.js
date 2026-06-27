@@ -1004,7 +1004,7 @@ function printPlan() {
     <tr>
       <td>${i + 1}</td>
       <td>${escHtml(r.name)}</td>
-      <td>${r.length} × ${r.breadth}</td>
+      <td>${(r.length > 0 && r.breadth > 0) ? `${r.length} × ${r.breadth}` : ''}</td>
       <td>${r.area.toFixed(2)}</td>
       <td>${escHtml(r.tileName)}</td>
       <td>${r.coverage} sqft</td>
