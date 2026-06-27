@@ -587,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Enter key on room form
-  [roomNameEl(), roomLengthEl(), roomBreadthEl(), finalBoxesEl()].forEach(el => {
+  [roomNameEl(), roomLengthEl(), roomBreadthEl(), liveAreaEl(), finalBoxesEl()].forEach(el => {
     el && el.addEventListener('keydown', e => { if (e.key === 'Enter') addRoom(); });
   });
 
