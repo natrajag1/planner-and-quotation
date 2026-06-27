@@ -452,6 +452,7 @@ input::placeholder { color: var(--text3); }
 
 
 /* Tile Search Dropdown */
+.add-room-section { position: relative; z-index: 10; }
 .tile-search-wrapper { position: relative; }
 .tile-search-wrapper input { width: 100%; }
 
