@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ag-traders-v2';
+const CACHE_NAME = 'ag-traders-v3';
 const ASSETS = [
   './',
   './index.html',
