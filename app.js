@@ -744,7 +744,6 @@ function renderDropdown() {
     <div class="tile-option ${i === highlightedIdx ? 'highlighted' : ''}" data-idx="${i}" style="padding: 0.6rem 0.9rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
       <span class="tile-option-name" style="font-size:0.83rem; color:var(--text); flex:1; text-align: left;">${t.name}</span>
       <span class="tile-option-badges" style="display:flex; gap:0.3rem; flex-shrink:0;">
-        <span class="tile-option-badge cov" style="font-size:0.68rem; padding:0.15rem 0.4rem; border-radius:4px; font-weight:600; background:rgba(6,182,212,0.2); color:#67e8f9;">${t.coverage} sqft</span>
         <span class="tile-option-badge wt" style="font-size:0.68rem; padding:0.15rem 0.4rem; border-radius:4px; font-weight:600; background:rgba(16,185,129,0.2); color:#6ee7b7;">${t.weight} kg</span>
       </span>
     </div>
@@ -1646,11 +1645,10 @@ function renderQuoteDropdown(idx) {
     <div class="tile-option ${i === highlightedQuoteTileIdx ? 'highlighted' : ''}" 
          onmousedown="selectQuoteTile(${idx}, ${i})"
          style="padding: 0.6rem 0.9rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-      <span class="tile-option-name" style="font-size:0.83rem; color:var(--text); flex:1; text-align: left;">${t.name}</span>
-      <span class="tile-option-badges" style="display:flex; gap:0.3rem; flex-shrink:0;">
-        <span class="tile-option-badge cov" style="font-size:0.68rem; padding:0.15rem 0.4rem; border-radius:4px; font-weight:600; background:rgba(6,182,212,0.2); color:#67e8f9;">${t.coverage} sqft</span>
-        <span class="tile-option-badge wt" style="font-size:0.68rem; padding:0.15rem 0.4rem; border-radius:4px; font-weight:600; background:rgba(16,185,129,0.2); color:#6ee7b7;">${t.weight} kg</span>
-      </span>
+       <span class="tile-option-name" style="font-size:0.83rem; color:var(--text); flex:1; text-align: left;">${t.name}</span>
+       <span class="tile-option-badges" style="display:flex; gap:0.3rem; flex-shrink:0;">
+         <span class="tile-option-badge wt" style="font-size:0.68rem; padding:0.15rem 0.4rem; border-radius:4px; font-weight:600; background:rgba(16,185,129,0.2); color:#6ee7b7;">${t.weight} kg</span>
+       </span>
     </div>
   `).join('');
   dd.classList.add('open');
