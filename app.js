@@ -879,7 +879,7 @@ function renderTable() {
       <td class="td-size">${(r.length > 0 && r.breadth > 0) ? `${r.length} × ${r.breadth}` : ''}</td>
       <td class="td-area">${r.area.toFixed(2)}</td>
       <td class="td-tile"><span class="td-tile-name" title="${escHtml(r.tileName)}">${escHtml(r.tileName)}</span></td>
-      <td class="td-cov">${r.coverage} sqft</td>
+
       <td class="td-boxes">${r.boxesExact.toFixed(2)}</td>
       <td class="td-final">
         <input type="number" class="table-input-boxes" value="${r.boxesFinal}" min="1" step="1" onchange="updateRoomBoxes(${r.id}, this.value)" />
@@ -1004,7 +1004,7 @@ function printPlan() {
       <td>${(r.length > 0 && r.breadth > 0) ? `${r.length} × ${r.breadth}` : ''}</td>
       <td>${r.area.toFixed(2)}</td>
       <td>${escHtml(r.tileName)}</td>
-      <td>${r.coverage} sqft</td>
+
       <td>${r.boxesExact.toFixed(2)}</td>
       <td class="final-boxes-cell">${r.boxesFinal}</td>
       <td>${r.weight}</td>
