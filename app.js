@@ -668,7 +668,7 @@ function updateLiveBoxes() {
   const finalBoxesEl   = document.getElementById('final-boxes');
 
   if (selectedTile && area > 0) {
-    if (actualBoxesDiv) actualBoxesDiv.style.display = 'flex';
+    // actualBoxesDiv hidden by design
     if (finalBoxesDiv) finalBoxesDiv.style.display  = 'flex';
     
     const boxesExact = area / selectedTile.coverage;
@@ -767,13 +767,10 @@ function selectTile(idx) {
   tileSearchEl().value = tile.name;
   closeTileDropdown();
 
-  // Show tile info
-  const infoDiv = document.getElementById('tile-info-display');
-  if (infoDiv) {
-    infoDiv.style.display = 'flex';
-    document.getElementById('info-coverage').textContent = `📐 ${tile.coverage} sqft/box`;
-    document.getElementById('info-weight').textContent   = `⚖️ ${tile.weight} kg/box`;
-  }
+  // Update tile info (hidden by design, but keep data updated for internal use)
+  document.getElementById('selected-tile-coverage').value = tile.coverage;
+  document.getElementById('info-coverage').textContent = `📐 ${tile.coverage} sqft/box`;
+  document.getElementById('info-weight').textContent   = `⚖️ ${tile.weight} kg/box`;
   updateLiveBoxes();
 }
 
