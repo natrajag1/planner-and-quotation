@@ -403,23 +403,24 @@ function parseCSV(text) {
 }
 
 async function loadCSVOnStartup() {
+  const CACHE_VERSION = 'v2_billing'; // bump this to force cache refresh
   const cached = localStorage.getItem('cached_tile_db');
-  if (cached) {
+  const cachedVersion = localStorage.getItem('cached_tile_db_version');
+  if (cached && cachedVersion === CACHE_VERSION) {
     try {
       const parsed = JSON.parse(cached);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // If old cache missing billingArea, clear it to force re-import
-        if (parsed[0].billingArea === undefined) {
-          localStorage.removeItem('cached_tile_db');
-          console.log('Cache invalidated: old format without billingArea');
-        } else {
-          TILE_DB = parsed;
-          console.log(`Loaded ${TILE_DB.length} tiles from localStorage cache`);
-        }
+        TILE_DB = parsed;
+        console.log(`Loaded ${TILE_DB.length} tiles from localStorage cache (${CACHE_VERSION})`);
       }
     } catch (e) {
       console.error('Failed to parse cached tile db:', e);
     }
+  } else if (cached) {
+    // Old cache (wrong rate formula or missing version) — clear it
+    localStorage.removeItem('cached_tile_db');
+    localStorage.removeItem('cached_tile_db_version');
+    console.log('Cache cleared: outdated version, will re-fetch from CSV');
   }
 
   const csvFiles = [
@@ -436,6 +437,7 @@ async function loadCSVOnStartup() {
         if (parsed.length > 0) {
           TILE_DB = parsed;
           localStorage.setItem('cached_tile_db', JSON.stringify(TILE_DB));
+          localStorage.setItem('cached_tile_db_version', 'v2_billing');
           console.log(`Loaded and cached ${TILE_DB.length} tiles from dynamic CSV fetch of ${file}`);
           break;
         }
@@ -457,6 +459,7 @@ function handleCSVUpload(event) {
     if (parsed.length > 0) {
       TILE_DB = parsed;
       localStorage.setItem('cached_tile_db', JSON.stringify(TILE_DB));
+      localStorage.setItem('cached_tile_db_version', 'v2_billing');
       alert(`Successfully loaded ${TILE_DB.length} tiles from "${file.name}"!`);
       
       filteredTiles = [...TILE_DB];
@@ -570,12 +573,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  document.addEventListener('focusin', (e) => {
-    const wrapper = document.querySelector('.tile-search-wrapper');
-    if (wrapper && !wrapper.contains(e.target)) {
-      closeTileDropdown();
-    }
-  });
+  // NOTE: focusin-based close removed — it fired before dropdown click
+  // causing tile selection to fail. The document 'click' handler above
+  // already handles closing when user clicks outside the wrapper.
 
   // Event delegation on dropdown for selection and highlighting
   const dropdownEl = tileDropEl();
@@ -1277,15 +1277,24 @@ function generateQuotationFromPlan() {
   rooms.forEach(r => {
     if (!tileMap[r.tileName]) {
       const dbTile = TILE_DB.find(t => t.name === r.tileName);
-      const rate = dbTile ? (dbTile.price || 0) : 0;
       const coverage = dbTile ? (dbTile.coverage || 0) : 0;
+      const billingArea = dbTile ? (dbTile.billingArea || 0) : 0;
       const sqftRate = dbTile ? (dbTile.sqftPrice || dbTile.sqftRate || 0) : 0;
       const unit = dbTile ? (dbTile.unit || 'Boxes') : 'Boxes';
+      // Rate = billingArea * sqftRate; fallback to coverage * sqftRate or stored price
+      const multiplier = billingArea > 0 ? billingArea : coverage;
+      let rate = 0;
+      if (sqftRate > 0 && multiplier > 0) {
+        rate = Math.round(sqftRate * multiplier * 100) / 100;
+      } else if (dbTile) {
+        rate = dbTile.price || 0;
+      }
       tileMap[r.tileName] = {
         description: r.tileName,
         quantity: 0,
         rate: rate,
         coverage: coverage,
+        billingArea: billingArea,
         sqftRate: sqftRate,
         unit: unit
       };
@@ -1296,23 +1305,14 @@ function generateQuotationFromPlan() {
   const customItems = quotationItems.filter(item => item.isCustom);
   
   let newItems = Object.values(tileMap).map(item => {
-    let sqftRate = item.sqftRate;
-    let rate = item.rate;
-    // If we have coverage but sqftRate is missing, compute it
-    if (item.coverage > 0) {
-      if (!sqftRate && rate > 0) {
-        sqftRate = Math.round((rate / item.coverage) * 100) / 100;
-      } else if (sqftRate > 0 && !rate) {
-        rate = Math.round((sqftRate * item.coverage) * 100) / 100;
-      }
-    }
     return {
       description: item.description,
       quantity: item.quantity,
-      rate: rate,
-      sqftRate: sqftRate,
+      rate: item.rate,
+      sqftRate: item.sqftRate,
       coverage: item.coverage,
-      amount: item.quantity * rate,
+      billingArea: item.billingArea || 0,
+      amount: item.quantity * item.rate,
       isCustom: false,
       unit: item.unit
     };
@@ -1418,8 +1418,10 @@ function handleQuoteInput(idx, field, val) {
     if (amountCell) amountCell.textContent = '₹ ' + item.amount.toFixed(2);
   } else if (field === 'rate') {
     item.rate = parseFloat(val) || 0;
-    if (item.coverage > 0) {
-      item.sqftRate = Math.round((item.rate / item.coverage) * 100) / 100;
+    // Back-calculate sqftRate using billingArea (preferred) or coverage
+    const rateMultiplier = (item.billingArea > 0) ? item.billingArea : item.coverage;
+    if (rateMultiplier > 0) {
+      item.sqftRate = Math.round((item.rate / rateMultiplier) * 100) / 100;
       const sqftInput = tr.querySelector('.quote-input-sqft-rate');
       if (sqftInput) sqftInput.value = item.sqftRate;
     }
@@ -1652,17 +1654,17 @@ function selectQuoteTile(idx, tileOptionIdx) {
   const item = quotationItems[idx];
   item.description = tile.name;
   item.coverage = tile.coverage || 0;
-  item.rate = tile.price || 0;
+  item.billingArea = tile.billingArea || 0;
   item.sqftRate = tile.sqftPrice || tile.sqftRate || 0;
   item.unit = tile.unit || 'Boxes';
   item.isCustom = false;
   
-  if (item.coverage > 0) {
-    if (!item.sqftRate && item.rate > 0) {
-      item.sqftRate = Math.round((item.rate / item.coverage) * 100) / 100;
-    } else if (item.sqftRate > 0 && !item.rate) {
-      item.rate = Math.round((item.sqftRate * item.coverage) * 100) / 100;
-    }
+  // Rate = billingArea * sqftRate; fallback to coverage * sqftRate or stored price
+  const multiplier = item.billingArea > 0 ? item.billingArea : item.coverage;
+  if (item.sqftRate > 0 && multiplier > 0) {
+    item.rate = Math.round((item.sqftRate * multiplier) * 100) / 100;
+  } else {
+    item.rate = tile.price || 0;
   }
   
   item.amount = item.quantity * item.rate;
@@ -2237,6 +2239,7 @@ function saveProductToCatalog() {
 
   // Save to local storage
   localStorage.setItem('cached_tile_db', JSON.stringify(TILE_DB));
+  localStorage.setItem('cached_tile_db_version', 'v2_billing');
 
   // Re-render things
   renderCatalogTable(currentCatalogFilter);
@@ -2259,6 +2262,7 @@ function deleteProductFromCatalog(index) {
   if (confirm(`Are you sure you want to delete "${item.name}" from the catalog?`)) {
     TILE_DB.splice(index, 1);
     localStorage.setItem('cached_tile_db', JSON.stringify(TILE_DB));
+    localStorage.setItem('cached_tile_db_version', 'v2_billing');
     renderCatalogTable(currentCatalogFilter);
     filteredTiles = [...TILE_DB];
     if (typeof renderDropdown === 'function') renderDropdown();
