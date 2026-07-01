@@ -678,11 +678,17 @@ function updateLiveBoxes() {
       popValue(liveBoxesEl);
     }
     if (finalBoxesEl) finalBoxesEl.value = Math.ceil(boxesExact);
+    
+    // Show actual decimal in the label hint
+    const hint = document.getElementById('actual-boxes-hint');
+    if (hint) hint.textContent = `(actual: ${boxesExact.toFixed(2)})`;
   } else {
     if (actualBoxesDiv) actualBoxesDiv.style.display = 'none';
     if (finalBoxesDiv) finalBoxesDiv.style.display  = 'none';
     if (liveBoxesEl) liveBoxesEl.textContent = '–';
     if (finalBoxesEl) finalBoxesEl.value = '';
+    const hint = document.getElementById('actual-boxes-hint');
+    if (hint) hint.textContent = '';
   }
 }
 
