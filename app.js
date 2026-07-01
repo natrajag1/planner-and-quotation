@@ -880,7 +880,7 @@ function renderTable() {
       <td class="td-area">${r.area.toFixed(2)}</td>
       <td class="td-tile"><span class="td-tile-name" title="${escHtml(r.tileName)}">${escHtml(r.tileName)}</span></td>
 
-      <td class="td-boxes">${r.boxesExact.toFixed(2)}</td>
+
       <td class="td-final">
         <input type="number" class="table-input-boxes" value="${r.boxesFinal}" min="1" step="1" onchange="updateRoomBoxes(${r.id}, this.value)" />
       </td>
@@ -1005,7 +1005,7 @@ function printPlan() {
       <td>${r.area.toFixed(2)}</td>
       <td>${escHtml(r.tileName)}</td>
 
-      <td>${r.boxesExact.toFixed(2)}</td>
+
       <td class="final-boxes-cell">${r.boxesFinal}</td>
       <td>${r.weight}</td>
       <td class="total-wt-cell">${r.totalWeight}</td>
