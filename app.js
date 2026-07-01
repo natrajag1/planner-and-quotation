@@ -347,6 +347,8 @@ function parseCSV(text) {
   
   const sqftRateIdx = headers.findIndex(h => h.includes('sqft price') || h.includes('sqft rate'));
   
+  const billingAreaIdx = headers.findIndex(h => h.includes('billing sqft'));
+  
   const db = [];
   for (let i = 1; i < lines.length; i++) {
     const line = lines[i].trim();
@@ -370,6 +372,16 @@ function parseCSV(text) {
       sqftPrice = parseFloat(parts[sqftRateIdx]) || 0;
     }
     
+    let billingArea = 0;
+    if (billingAreaIdx !== -1 && parts[billingAreaIdx]) {
+      billingArea = parseFloat(parts[billingAreaIdx]) || 0;
+    }
+    
+    // If billingArea and sqftPrice exist, derive the per-box price from them
+    if (billingArea > 0 && sqftPrice > 0) {
+      price = Math.round(billingArea * sqftPrice * 100) / 100;
+    }
+    
     let unit = 'Boxes';
     if (unitIdx !== -1 && parts[unitIdx]) {
       unit = parts[unitIdx].trim();
@@ -383,6 +395,7 @@ function parseCSV(text) {
       rate: price,
       sqftPrice,
       sqftRate: sqftPrice,
+      billingArea,
       unit
     });
   }
@@ -395,8 +408,14 @@ async function loadCSVOnStartup() {
     try {
       const parsed = JSON.parse(cached);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        TILE_DB = parsed;
-        console.log(`Loaded ${TILE_DB.length} tiles from localStorage cache`);
+        // If old cache missing billingArea, clear it to force re-import
+        if (parsed[0].billingArea === undefined) {
+          localStorage.removeItem('cached_tile_db');
+          console.log('Cache invalidated: old format without billingArea');
+        } else {
+          TILE_DB = parsed;
+          console.log(`Loaded ${TILE_DB.length} tiles from localStorage cache`);
+        }
       }
     } catch (e) {
       console.error('Failed to parse cached tile db:', e);
@@ -1387,8 +1406,10 @@ function handleQuoteInput(idx, field, val) {
     item.unit = val;
   } else if (field === 'sqftRate') {
     item.sqftRate = parseFloat(val) || 0;
-    if (item.coverage > 0) {
-      item.rate = Math.round((item.sqftRate * item.coverage) * 100) / 100;
+    // Use billingArea if available, otherwise fall back to coverage
+    const multiplier = (item.billingArea > 0) ? item.billingArea : item.coverage;
+    if (multiplier > 0) {
+      item.rate = Math.round((item.sqftRate * multiplier) * 100) / 100;
       const rateInput = tr.querySelector('.quote-input-rate');
       if (rateInput) rateInput.value = item.rate;
     }
@@ -1419,16 +1440,17 @@ function handleQuoteChange(idx, field, val) {
     const dbTile = TILE_DB.find(t => t.name.toLowerCase() === val.trim().toLowerCase());
     if (dbTile) {
       item.coverage = dbTile.coverage || 0;
-      item.rate = dbTile.price || 0;
+      item.billingArea = dbTile.billingArea || 0;
       item.sqftRate = dbTile.sqftPrice || dbTile.sqftRate || 0;
       item.unit = dbTile.unit || 'Boxes';
       
-      if (item.coverage > 0) {
-        if (!item.sqftRate && item.rate > 0) {
-          item.sqftRate = Math.round((item.rate / item.coverage) * 100) / 100;
-        } else if (item.sqftRate > 0 && !item.rate) {
-          item.rate = Math.round((item.sqftRate * item.coverage) * 100) / 100;
-        }
+      // Rate = billingArea * sqftRate (new formula)
+      // Fallback: if no billingArea, use coverage * sqftRate or stored price
+      const multiplier = (item.billingArea > 0) ? item.billingArea : item.coverage;
+      if (item.sqftRate > 0 && multiplier > 0) {
+        item.rate = Math.round((item.sqftRate * multiplier) * 100) / 100;
+      } else {
+        item.rate = dbTile.price || 0;
       }
       
       item.amount = item.quantity * item.rate;
@@ -1452,6 +1474,7 @@ function addQuotationRow() {
     rate: 0,
     sqftRate: 0,
     coverage: 0,
+    billingArea: 0,
     amount: 0,
     isCustom: true,
     unit: 'Nos'
