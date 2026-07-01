@@ -336,7 +336,13 @@ function parseCSV(text) {
   const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
   
   const nameIdx = headers.findIndex(h => h === 'name');
-  const coverageIdx = headers.findIndex(h => h.includes('coverage') || h.includes('sqft per box'));
+  
+  // Column B: Planning coverage (15.5) — must NOT be the billing/quotation column
+  const coverageIdx = headers.findIndex(h =>
+    (h.includes('coverage') || h.includes('sqft per box')) &&
+    !h.includes('billing') && !h.includes('quotation')
+  );
+  
   const weightIdx = headers.findIndex(h => h.includes('weight') || h.includes('kg per box'));
   const unitIdx = headers.findIndex(h => h === 'unit');
   
@@ -347,7 +353,10 @@ function parseCSV(text) {
   
   const sqftRateIdx = headers.findIndex(h => h.includes('sqft price') || h.includes('sqft rate'));
   
-  const billingAreaIdx = headers.findIndex(h => h.includes('billing sqft'));
+  // Column E: Billing/Quotation area (16) — matches 'billing sqft', 'billing and quotation', or any coverage col with 'billing'/'quotation'
+  const billingAreaIdx = headers.findIndex(h =>
+    h.includes('billing') || h.includes('quotation')
+  );
   
   const db = [];
   for (let i = 1; i < lines.length; i++) {
@@ -403,7 +412,7 @@ function parseCSV(text) {
 }
 
 async function loadCSVOnStartup() {
-  const CACHE_VERSION = 'v2_billing'; // bump this to force cache refresh
+  const CACHE_VERSION = 'v3_billing_col_fix'; // bump this to force cache refresh
   const cached = localStorage.getItem('cached_tile_db');
   const cachedVersion = localStorage.getItem('cached_tile_db_version');
   if (cached && cachedVersion === CACHE_VERSION) {
@@ -437,7 +446,7 @@ async function loadCSVOnStartup() {
         if (parsed.length > 0) {
           TILE_DB = parsed;
           localStorage.setItem('cached_tile_db', JSON.stringify(TILE_DB));
-          localStorage.setItem('cached_tile_db_version', 'v2_billing');
+          localStorage.setItem('cached_tile_db_version', 'v3_billing_col_fix');
           console.log(`Loaded and cached ${TILE_DB.length} tiles from dynamic CSV fetch of ${file}`);
           break;
         }
@@ -459,7 +468,7 @@ function handleCSVUpload(event) {
     if (parsed.length > 0) {
       TILE_DB = parsed;
       localStorage.setItem('cached_tile_db', JSON.stringify(TILE_DB));
-      localStorage.setItem('cached_tile_db_version', 'v2_billing');
+      localStorage.setItem('cached_tile_db_version', 'v3_billing_col_fix');
       alert(`Successfully loaded ${TILE_DB.length} tiles from "${file.name}"!`);
       
       filteredTiles = [...TILE_DB];
@@ -2239,7 +2248,7 @@ function saveProductToCatalog() {
 
   // Save to local storage
   localStorage.setItem('cached_tile_db', JSON.stringify(TILE_DB));
-  localStorage.setItem('cached_tile_db_version', 'v2_billing');
+  localStorage.setItem('cached_tile_db_version', 'v3_billing_col_fix');
 
   // Re-render things
   renderCatalogTable(currentCatalogFilter);
@@ -2262,7 +2271,7 @@ function deleteProductFromCatalog(index) {
   if (confirm(`Are you sure you want to delete "${item.name}" from the catalog?`)) {
     TILE_DB.splice(index, 1);
     localStorage.setItem('cached_tile_db', JSON.stringify(TILE_DB));
-    localStorage.setItem('cached_tile_db_version', 'v2_billing');
+    localStorage.setItem('cached_tile_db_version', 'v3_billing_col_fix');
     renderCatalogTable(currentCatalogFilter);
     filteredTiles = [...TILE_DB];
     if (typeof renderDropdown === 'function') renderDropdown();
